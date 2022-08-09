@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{A6EFD1A8-0D05-3F53-2B0A-35136CD4F211}</ProjectGuid>
+    <ProjectGuid>{91059CF6-5099-0D7D-08C4-FF02058796F8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -767,7 +767,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ParrelSync.csproj">
-      <Project>{96D5F09A-8301-71A2-F83F-D3EFC5DB323D}</Project>
+      <Project>{4E80CCC0-A4C1-F195-5DC7-4DB9426E52CF}</Project>
       <Name>ParrelSync</Name>
     </ProjectReference>
   </ItemGroup>

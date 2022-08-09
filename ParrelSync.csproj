@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{96D5F09A-8301-71A2-F83F-D3EFC5DB323D}</ProjectGuid>
+    <ProjectGuid>{4E80CCC0-A4C1-F195-5DC7-4DB9426E52CF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>ParrelSync</AssemblyName>
