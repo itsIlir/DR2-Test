@@ -1,0 +1,14 @@
+#Ignore client build from build scripts
+/Build/
+
+#Ignore FMOD local files
+/fmod_mna/.cache/*
+/fmod_mna/.unsaved/*
+/fmod_mna/.user/*
+
+.idea
+/bin/
+.classpath
+.project
+.settings/
+

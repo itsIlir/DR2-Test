@@ -1,0 +1,44 @@
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.deps.json
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.pdb
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.pdb
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.xml
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.pdb
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.xml
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.pdb
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.xml
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.AssemblyReference.cache
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.AssemblyInfoInputs.cache
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.AssemblyInfo.cs
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.CoreCompileInputs.cache
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.CopyComplete
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.pdb
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\GameModels.dll
+C:\Users\Sindroma\Repo\C#\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\GameModels.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.AssemblyReference.cache
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.AssemblyInfoInputs.cache
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.AssemblyInfo.cs
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.CoreCompileInputs.cache
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.deps.json
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRiftTest.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\GameModels.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.dll
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\GameModels.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.xml
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Server.xml
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.pdb
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\bin\Debug\netcoreapp3.1\DarkRift.Client.xml
+C:\Users\Sindroma\Repo\Unity 2020\DR2 Test\DarkRiftTest\DarkRiftTest\obj\Debug\netcoreapp3.1\DarkRiftTest.csproj.CopyComplete

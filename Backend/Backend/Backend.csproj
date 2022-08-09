@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameModels\GameModels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="DarkRift">
+      <HintPath>..\..\Server\Lib\DarkRift.dll</HintPath>
+    </Reference>
+    <Reference Include="DarkRift.Server">
+      <HintPath>..\..\Server\Lib\DarkRift.Server.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(SolutionDir)Backend\bin\Debug\netcoreapp3.1\Backend.dll&quot; &quot;$(SolutionDir)&quot;..\&quot;Server\Plugins&quot; /Y /D" />
+  </Target>
+
+</Project>
