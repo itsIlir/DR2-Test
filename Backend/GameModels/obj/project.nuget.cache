@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Mv6LfiUIIHsl+6Qhy5GfmhXFXC0D4EZQR60ghdDF/DVA6e0dJPNZfI1AjkFOhWQ9My6oeeSEJ+qs+jMwOD0pzw==",
+  "dgSpecHash": "gWHH1U4G2slL8gppIVGzkXpX1H10Zdabmufqt7Pc7OTkJBKa57R4jy8AYkh5H99ExQZJAO2WpMMGGi6kd6QMkw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\GameModels.csproj",
+  "projectFilePath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\GameModels.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

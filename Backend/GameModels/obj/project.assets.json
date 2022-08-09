@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\GameModels.csproj",
+      "projectUniqueName": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\GameModels.csproj",
       "projectName": "GameModels",
-      "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\GameModels.csproj",
+      "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\GameModels.csproj",
       "packagesPath": "C:\\Users\\Sindroma\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\obj\\",
+      "outputPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Sindroma\\AppData\\Roaming\\NuGet\\NuGet.Config",

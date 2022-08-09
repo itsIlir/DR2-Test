@@ -4,14 +4,14 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\..\&quot;Unity 2020\DR2 Test\Assets\Plugins&quot; /Y&#xD;&#xA;xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\&quot;Server\Plugins&quot; /Y" />
-  </Target>
-
   <ItemGroup>
     <Reference Include="DarkRift">
       <HintPath>..\..\Server\Lib\DarkRift.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\..\&quot;Unity 2020\DR2-Test\Assets\Plugins&quot; /Y&#xA;xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\&quot;Server\Plugins&quot; /Y" />
+  </Target>
 
 </Project>

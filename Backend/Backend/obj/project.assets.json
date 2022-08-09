@@ -32,11 +32,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\Backend\\Backend.csproj",
+      "projectUniqueName": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\Backend\\Backend.csproj",
       "projectName": "Backend",
-      "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\Backend\\Backend.csproj",
+      "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\Backend\\Backend.csproj",
       "packagesPath": "C:\\Users\\Sindroma\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\Backend\\obj\\",
+      "outputPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\Backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Sindroma\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -53,8 +53,8 @@
         "netcoreapp3.1": {
           "targetAlias": "netcoreapp3.1",
           "projectReferences": {
-            "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\GameModels.csproj": {
-              "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2 Test\\Backend\\GameModels\\GameModels.csproj"
+            "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\GameModels.csproj": {
+              "projectPath": "C:\\Users\\Sindroma\\Repo\\Unity 2020\\DR2-Test\\Backend\\GameModels\\GameModels.csproj"
             }
           }
         }
