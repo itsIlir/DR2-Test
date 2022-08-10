@@ -8,8 +8,8 @@ using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour
 {
-    [SerializeField]
-    UnityClient client;
+    //[SerializeField]
+    //UnityClient client;
 
     [SerializeField]
     GameObject controllablePrefab, networkPrefab;
@@ -26,11 +26,11 @@ public class NetworkManager : MonoBehaviour
     {
         Application.runInBackground = true;
 
-        if (client == null)
-        {
-            Debug.LogError("Client unassigned in PlayerSpawner.");
-            Application.Quit();
-        }
+        //if (client == null)
+        //{
+        //    Debug.LogError("Client unassigned in PlayerSpawner.");
+        //    Application.Quit();
+        //}
 
         if (controllablePrefab == null)
         {
@@ -43,41 +43,38 @@ public class NetworkManager : MonoBehaviour
             Debug.LogError("Network Prefab unassigned in PlayerSpawner.");
             Application.Quit();
         }
+        ServiceLocator<INetworkService>.Get().OnMessageRecived += OnMessageRecived;
 
-        client.MessageReceived += OnMessageRecived;
+        //client.MessageReceived += OnMessageRecived;
     }
 
     private void OnDestroy()
     {
-        client.MessageReceived -= OnMessageRecived;
+        ServiceLocator<INetworkService>.Get().OnMessageRecived -= OnMessageRecived;
+        //client.MessageReceived -= OnMessageRecived;
     }
 
     public void OnButtonClick()
     {
-        Chat chat = new Chat();
-        chat.chatMsg = inputField.text;
-
-        using (Message message = Message.Create((ushort)Tags.Tag.TEXT_MSG, chat))
-        {
-            client.SendMessage(message, SendMode.Reliable);
-        }
+        ServiceLocator<INetworkService>.Get().SendTextMessage(inputField.text);
     }
 
-    public void OnPlayerMove(Vector2 moveVector)
-    {
-        Move move = new Move();
-        move.X = moveVector.x;
-        move.Y = moveVector.y;
-        move.ID = client.ID;
+    //public void OnPlayerMove(Vector2 moveVector)
+    //{
+    //    Move move = new Move();
+    //    move.X = moveVector.x;
+    //    move.Y = moveVector.y;
+    //    move.ID = client.ID;
 
-        using (Message message = Message.Create((ushort)Tags.Tag.PLAYER_MOVE, move))
-        {
-            client.SendMessage(message, SendMode.Unreliable);
-        }
-    }
+    //    using (Message message = Message.Create((ushort)Tags.Tag.PLAYER_MOVE, move))
+    //    {
+    //        client.SendMessage(message, SendMode.Unreliable);
+    //    }
+    //}
 
     private void OnMessageRecived(object sender, MessageReceivedEventArgs e)
     {
+        Debug.Log("AAA OnMessageRecived");
         using (Message message = e.GetMessage())
         {
             using (DarkRiftReader reader = message.GetReader())
@@ -93,7 +90,7 @@ public class NetworkManager : MonoBehaviour
 
                             GameObject gameObject;
 
-                            if (id == client.ID)
+                            if (id == ServiceLocator<INetworkService>.Get().NetworkID)//client.ID
                             {
                                 gameObject = Instantiate(controllablePrefab, position, Quaternion.identity);
                             }

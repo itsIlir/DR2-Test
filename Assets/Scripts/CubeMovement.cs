@@ -22,7 +22,7 @@ public class CubeMovement : MonoBehaviour
         float inputY = Input.GetAxis("Vertical");
 
         var newPos = new Vector2(speed * inputX, speed *inputY) * Time.deltaTime;
-        networkManager.OnPlayerMove(newPos);
+        //networkManager.OnPlayerMove(newPos);
         PlayerMove(newPos);
     }
 
