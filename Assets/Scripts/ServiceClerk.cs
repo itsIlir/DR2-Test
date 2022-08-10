@@ -9,7 +9,6 @@ public class ServiceClerk : MonoBehaviour
 
     void Awake()
     {
-        Debug.Log("AAA ServiceClerk Awake");
         var networkService = Instantiate(_networkServicePrefab);
         ServiceLocator<INetworkService>.Bind(networkService);
     }

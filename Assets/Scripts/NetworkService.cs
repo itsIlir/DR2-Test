@@ -8,18 +8,12 @@ using System;
 
 public class NetworkService : MonoBehaviour, INetworkService
 {
+    public event Action<object, MessageReceivedEventArgs> OnMessageRecived;
+
     [SerializeField]
     UnityClient client;
 
-    int _networkID;
-
-    public event Action<object, MessageReceivedEventArgs> OnMessageRecived;
-
-    public int NetworkID
-    {
-        get => _networkID;
-        set => _networkID = value;
-    }
+    public int NetworkID => client.ID;
 
     void Awake()
     {
@@ -28,7 +22,6 @@ public class NetworkService : MonoBehaviour, INetworkService
             Debug.LogError("Client unassigned in PlayerSpawner.");
             Application.Quit();
         }
-        SetNetworkID();
         client.MessageReceived += MessageRecived;
     }
 
@@ -42,11 +35,6 @@ public class NetworkService : MonoBehaviour, INetworkService
         OnMessageRecived?.Invoke(sender, e);
     }
 
-    void SetNetworkID()
-    {
-        NetworkID = client.ID;
-    }
-
     public void SendTextMessage(string inputedText)
     {
         Chat chat = new Chat();
@@ -54,6 +42,19 @@ public class NetworkService : MonoBehaviour, INetworkService
         using (Message message = Message.Create((ushort)Tags.Tag.TEXT_MSG, chat))
         {
             client.SendMessage(message, SendMode.Reliable);
+        }
+    }
+
+    public void SendMoveMessage(Vector2 position)
+    {
+        Move move = new Move();
+        move.X = position.x;
+        move.Y = position.y;
+        move.ID = client.ID;
+
+        using (Message message = Message.Create((ushort)Tags.Tag.PLAYER_MOVE, move))
+        {
+            client.SendMessage(message, SendMode.Unreliable);
         }
     }
 }

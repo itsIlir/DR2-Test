@@ -8,9 +8,6 @@ using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour
 {
-    //[SerializeField]
-    //UnityClient client;
-
     [SerializeField]
     GameObject controllablePrefab, networkPrefab;
 
@@ -26,12 +23,6 @@ public class NetworkManager : MonoBehaviour
     {
         Application.runInBackground = true;
 
-        //if (client == null)
-        //{
-        //    Debug.LogError("Client unassigned in PlayerSpawner.");
-        //    Application.Quit();
-        //}
-
         if (controllablePrefab == null)
         {
             Debug.LogError("Controllable Prefab unassigned in PlayerSpawner.");
@@ -43,15 +34,13 @@ public class NetworkManager : MonoBehaviour
             Debug.LogError("Network Prefab unassigned in PlayerSpawner.");
             Application.Quit();
         }
-        ServiceLocator<INetworkService>.Get().OnMessageRecived += OnMessageRecived;
 
-        //client.MessageReceived += OnMessageRecived;
+        ServiceLocator<INetworkService>.Get().OnMessageRecived += OnMessageRecived;
     }
 
     private void OnDestroy()
     {
         ServiceLocator<INetworkService>.Get().OnMessageRecived -= OnMessageRecived;
-        //client.MessageReceived -= OnMessageRecived;
     }
 
     public void OnButtonClick()
@@ -59,22 +48,13 @@ public class NetworkManager : MonoBehaviour
         ServiceLocator<INetworkService>.Get().SendTextMessage(inputField.text);
     }
 
-    //public void OnPlayerMove(Vector2 moveVector)
-    //{
-    //    Move move = new Move();
-    //    move.X = moveVector.x;
-    //    move.Y = moveVector.y;
-    //    move.ID = client.ID;
-
-    //    using (Message message = Message.Create((ushort)Tags.Tag.PLAYER_MOVE, move))
-    //    {
-    //        client.SendMessage(message, SendMode.Unreliable);
-    //    }
-    //}
+    public void OnPlayerMove(Vector2 moveVector)
+    {
+        ServiceLocator<INetworkService>.Get().SendMoveMessage(moveVector);
+    }
 
     private void OnMessageRecived(object sender, MessageReceivedEventArgs e)
     {
-        Debug.Log("AAA OnMessageRecived");
         using (Message message = e.GetMessage())
         {
             using (DarkRiftReader reader = message.GetReader())
@@ -89,15 +69,10 @@ public class NetworkManager : MonoBehaviour
                             Vector3 position = new Vector3(spawn.X, spawn.Y, 10);
 
                             GameObject gameObject;
-
-                            if (id == ServiceLocator<INetworkService>.Get().NetworkID)//client.ID
-                            {
+                            if (id == ServiceLocator<INetworkService>.Get().NetworkID)
                                 gameObject = Instantiate(controllablePrefab, position, Quaternion.identity);
-                            }
                             else
-                            {
                                 gameObject = Instantiate(networkPrefab, position, Quaternion.identity);
-                            }
 
                             players.Add(id, gameObject.GetComponent<CubeMovement>());
                         }
@@ -125,9 +100,7 @@ public class NetworkManager : MonoBehaviour
                         {
                             Remove remove = reader.ReadSerializable<Remove>();
                             if(players.TryGetValue(remove.ID, out var player))
-                            {
                                 Destroy(player.gameObject);
-                            }
                         }
                         break;
                 }

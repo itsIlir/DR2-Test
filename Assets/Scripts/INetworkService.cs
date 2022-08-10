@@ -1,5 +1,6 @@
 using DarkRift.Client;
 using System;
+using UnityEngine;
 
 public interface INetworkService
 {
@@ -9,4 +10,5 @@ public interface INetworkService
 
     void SendTextMessage(string inputedText);
 
+    void SendMoveMessage(Vector2 position);
 }
