@@ -184,7 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4211a93b614e902448a9e2374a065cce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  host: localhost
+  host: 127.0.0.1
   port: 4296
   noDelay: 0
   connectOnStart: 1
