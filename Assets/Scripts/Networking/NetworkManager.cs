@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using DarkRift.Client.Unity;
 using DarkRift;
 using GameModels;
-using DarkRift.Client;
 using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour
@@ -58,47 +56,30 @@ public class NetworkManager : MonoBehaviour
         switch (message.Tag)
         {
             case (ushort)Tags.Tag.SPAWN_PLAYER:
-                Debug.Log("AAA reader.Position: " + reader.Position);
                 while (reader.Position < reader.Length)
                 {
-                    
-                    Spawn spawn = reader.ReadSerializable<Spawn>();
-                    ushort id = spawn.ID;
-                    Vector3 position = new Vector3(spawn.X, spawn.Y, 10);
+                    CubeMovement gameObject = ServiceLocator<INetworkService>.Get().ReadSpawn(
+                        reader, controllablePrefab, networkPrefab, out var id);
 
-                    GameObject gameObject;
-                    if (id == ServiceLocator<INetworkService>.Get().NetworkID)
-                        gameObject = Instantiate(controllablePrefab, position, Quaternion.identity);
-                    else
-                        gameObject = Instantiate(networkPrefab, position, Quaternion.identity);
-
-                    players.Add(id, gameObject.GetComponent<CubeMovement>());
+                    players.Add(id, gameObject);
                 }
                 break;
             case (ushort)Tags.Tag.TEXT_MSG:
                 while (reader.Position < reader.Length)
                 {
-                    Chat chat = reader.ReadSerializable<Chat>();
-                    textToshow.text = chat.chatMsg;
+                    textToshow.text = ServiceLocator<INetworkService>.Get().ReadChat(reader);
                 }
                 break;
             case (ushort)Tags.Tag.PLAYER_MOVE:
                 while (reader.Position < reader.Length)
                 {
-                    Move move = reader.ReadSerializable<Move>();
-                    if (players.TryGetValue(move.ID, out var player))
-                    {
-                        Vector2 moveVector = new Vector2(move.X, move.Y);
-                        player.PlayerMove(moveVector);
-                    }
+                    ServiceLocator<INetworkService>.Get().ReadMovement(reader, players);
                 }
                 break;
             case (ushort)Tags.Tag.PLAYER_REMOVE:
                 while(reader.Position < reader.Length)
                 {
-                    Remove remove = reader.ReadSerializable<Remove>();
-                    if(players.TryGetValue(remove.ID, out var player))
-                        Destroy(player.gameObject);
+                    ServiceLocator<INetworkService>.Get().ReadRemove(reader, players);
                 }
                 break;
         }
