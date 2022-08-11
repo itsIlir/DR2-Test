@@ -8,7 +8,7 @@ using System;
 
 public class NetworkService : MonoBehaviour, INetworkService
 {
-    public event Action<object, MessageReceivedEventArgs> OnMessageRecived;
+    public event Action<object, DarkRiftReader, Message> OnMessageRecived;
 
     [SerializeField]
     UnityClient client;
@@ -32,7 +32,20 @@ public class NetworkService : MonoBehaviour, INetworkService
 
     void MessageRecived(object sender, MessageReceivedEventArgs e)
     {
-        OnMessageRecived?.Invoke(sender, e);
+        DarkRiftReader reader = ReadMessage(e, out var message);
+        OnMessageRecived?.Invoke(sender, reader, message);
+    }
+
+    DarkRiftReader ReadMessage(MessageReceivedEventArgs e, out Message msg)
+    {
+        using (Message message = e.GetMessage())
+        {
+            msg = message;
+            using (DarkRiftReader reader = message.GetReader())
+            {
+                return reader;
+            }
+        }
     }
 
     public void SendTextMessage(string inputedText)
@@ -55,18 +68,6 @@ public class NetworkService : MonoBehaviour, INetworkService
         using (Message message = Message.Create((ushort)Tags.Tag.PLAYER_MOVE, move))
         {
             client.SendMessage(message, SendMode.Unreliable);
-        }
-    }
-
-    public DarkRiftReader ReadMessage(MessageReceivedEventArgs e, out Message msg)
-    {
-        using (Message message = e.GetMessage())
-        {
-            msg = message;
-            using (DarkRiftReader reader = message.GetReader())
-            {
-                return reader;
-            }
         }
     }
 }

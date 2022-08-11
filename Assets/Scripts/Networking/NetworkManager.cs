@@ -53,14 +53,15 @@ public class NetworkManager : MonoBehaviour
         ServiceLocator<INetworkService>.Get().SendMoveMessage(moveVector);
     }
 
-    void OnMessageRecived(object sender, MessageReceivedEventArgs e)
+    void OnMessageRecived(object sender, DarkRiftReader reader, Message message)
     {
-        DarkRiftReader reader = ServiceLocator<INetworkService>.Get().ReadMessage(e, out var message);
         switch (message.Tag)
         {
             case (ushort)Tags.Tag.SPAWN_PLAYER:
+                Debug.Log("AAA reader.Position: " + reader.Position);
                 while (reader.Position < reader.Length)
                 {
+                    
                     Spawn spawn = reader.ReadSerializable<Spawn>();
                     ushort id = spawn.ID;
                     Vector3 position = new Vector3(spawn.X, spawn.Y, 10);
