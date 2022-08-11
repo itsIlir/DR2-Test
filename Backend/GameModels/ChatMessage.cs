@@ -4,8 +4,10 @@ namespace GameModels
 {
     public struct ChatMessage : INetworkData
     {
-        public NetworkMessageType MessageType => NetworkMessageType.ChatMessage;
-        public SendMode SendMode => SendMode.Reliable;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.ChatMessage;
+        public const SendMode StaticSendMode = SendMode.Reliable;
+        public NetworkMessageType MessageType => StaticMessageType;
+        public SendMode SendMode => StaticSendMode;
 
         public string ChatText;
 

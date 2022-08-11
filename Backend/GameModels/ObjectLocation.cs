@@ -1,14 +1,13 @@
 ﻿using DarkRift;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GameModels
 {
     public struct ObjectLocation : INetworkData
     {
-        public NetworkMessageType MessageType => NetworkMessageType.ObjectLocation;
-        public SendMode SendMode => SendMode.Unreliable;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.ObjectLocation;
+        public const SendMode StaticSendMode = SendMode.Unreliable;
+        public NetworkMessageType MessageType => StaticMessageType;
+        public SendMode SendMode => StaticSendMode;
 
         public ushort Id;
         public float X;

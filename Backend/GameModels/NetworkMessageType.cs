@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace GameModels
+﻿namespace GameModels
 {
     public enum NetworkMessageType : ushort
     {
