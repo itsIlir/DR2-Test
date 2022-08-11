@@ -22,16 +22,10 @@ public class NetworkManager : MonoBehaviour
         Application.runInBackground = true;
 
         if (controllablePrefab == null)
-        {
             Debug.LogError("Controllable Prefab unassigned in PlayerSpawner.");
-            Application.Quit();
-        }
 
         if (networkPrefab == null)
-        {
             Debug.LogError("Network Prefab unassigned in PlayerSpawner.");
-            Application.Quit();
-        }
 
         ServiceLocator<INetworkService>.Get().OnMessageRecived += OnMessageRecived;
     }
@@ -60,27 +54,23 @@ public class NetworkManager : MonoBehaviour
                 {
                     CubeMovement gameObject = ServiceLocator<INetworkService>.Get().ReadSpawn(
                         reader, controllablePrefab, networkPrefab, out var id);
-
                     players.Add(id, gameObject);
                 }
                 break;
+
             case (ushort)Tags.Tag.TEXT_MSG:
                 while (reader.Position < reader.Length)
-                {
                     textToshow.text = ServiceLocator<INetworkService>.Get().ReadChat(reader);
-                }
                 break;
+
             case (ushort)Tags.Tag.PLAYER_MOVE:
                 while (reader.Position < reader.Length)
-                {
                     ServiceLocator<INetworkService>.Get().ReadMovement(reader, players);
-                }
                 break;
+
             case (ushort)Tags.Tag.PLAYER_REMOVE:
                 while(reader.Position < reader.Length)
-                {
                     ServiceLocator<INetworkService>.Get().ReadRemove(reader, players);
-                }
                 break;
         }
     }
