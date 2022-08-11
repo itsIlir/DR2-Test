@@ -8,17 +8,15 @@ using UnityEngine;
 
 namespace Networking
 {
-    public class NetworkService : INetworkService
+    public class NetworkService : MonoBehaviour, INetworkService
     {
-        readonly UnityClient Client;
+        [SerializeField]
+        UnityClient _client;
 
         readonly Dictionary<NetworkMessageType, IMessageProcessor>
             MessageProcessors = new Dictionary<NetworkMessageType, IMessageProcessor>();
 
-        public NetworkService(UnityClient client)
-        {
-            Client = client;
-        }
+        public UnityClient Client => _client;
 
         public MessageProcessor<T> GetProcessor<T>() where T : struct, INetworkData
         {

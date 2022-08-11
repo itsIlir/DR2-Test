@@ -1,4 +1,3 @@
-using DarkRift.Client.Unity;
 using Networking;
 using UnityEngine;
 
@@ -7,11 +6,11 @@ namespace Services
     public class ServiceClerk : MonoBehaviour
     {
         [SerializeField]
-        UnityClient _unityDarkRiftClient;
+        NetworkService _networkServicePrefab;
 
         void Awake()
         {
-            var networkService = new NetworkService(_unityDarkRiftClient);
+            var networkService = Instantiate(_networkServicePrefab);
             ServiceLocator<INetworkService>.Bind(networkService);
         }
     }

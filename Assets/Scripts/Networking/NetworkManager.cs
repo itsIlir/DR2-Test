@@ -12,9 +12,6 @@ namespace Networking
     public class NetworkManager : MonoBehaviour
     {
         [SerializeField]
-        UnityClient client;
-
-        [SerializeField]
         ObjectHandler _objectHandler;
 
         [SerializeField]
@@ -26,15 +23,9 @@ namespace Networking
         {
             Application.runInBackground = true;
 
-            if (client == null)
-            {
-                Debug.LogError("Client unassigned in PlayerSpawner.");
-                Application.Quit();
-            }
-
-            client.MessageReceived += InitialMessageReceived;
-
             _networkService = ServiceLocator<INetworkService>.Get();
+            _networkService.Client.MessageReceived += InitialMessageReceived;
+
             _networkService.Connect();
 
             _networkService.GetProcessor<ObjectInit>().OnMessage += _objectHandler.OnObjectInit;
@@ -46,6 +37,7 @@ namespace Networking
 
         private void InitialMessageReceived(object sender, MessageReceivedEventArgs e)
         {
+            var client = _networkService.Client;
             Debug.Log($"Connected! Client ID {client.ID}");
             _objectHandler.LocalClientId = client.ID;
             client.MessageReceived -= InitialMessageReceived;
@@ -55,6 +47,7 @@ namespace Networking
         private IEnumerator UpdateLocalPlayerLocation()
         {
             var sendDelay = new WaitForSecondsRealtime(0.01f);
+            var client = _networkService.Client;
             while (client.ConnectionState == ConnectionState.Connected)
             {
                 if (_objectHandler.ObjectExists(client.ID))

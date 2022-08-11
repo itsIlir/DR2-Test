@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using DarkRift;
+using DarkRift.Client.Unity;
 using GameModels;
 
 namespace Networking
 {
     public interface INetworkService
     {
+        UnityClient Client { get; }
         MessageProcessor<T> GetProcessor<T>() where T : struct, INetworkData;
         void Connect();
         void Disconnect();
