@@ -47,6 +47,10 @@ ExportedObj/
 *.opendb
 *.VC.db
 
+#Allow Backend solution
+!/Backend/**.sln
+!/Backend/**/*.csproj
+
 # Unity3D generated meta files
 *.pidb.meta
 *.pdb.meta
