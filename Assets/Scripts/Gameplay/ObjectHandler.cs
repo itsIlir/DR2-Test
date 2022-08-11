@@ -2,7 +2,7 @@
 using GameModels;
 using UnityEngine;
 
-namespace DR2Test.Network
+namespace Gameplay
 {
     public class ObjectHandler : MonoBehaviour
     {

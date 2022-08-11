@@ -3,7 +3,7 @@ using GameModels;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace DR2Test.Network
+namespace Gameplay
 {
     public class ChatManager : MonoBehaviour
     {
