@@ -3,7 +3,7 @@ using UnityEngine;
 public class CubeMovement : MonoBehaviour
 {
     NetworkManager networkManager;
-    float speed = 10;
+    readonly float speed = 10;
 
     [SerializeField]
     bool isOwner;

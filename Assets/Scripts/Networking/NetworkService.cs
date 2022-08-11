@@ -57,4 +57,16 @@ public class NetworkService : MonoBehaviour, INetworkService
             client.SendMessage(message, SendMode.Unreliable);
         }
     }
+
+    public DarkRiftReader ReadMessage(MessageReceivedEventArgs e, out Message msg)
+    {
+        using (Message message = e.GetMessage())
+        {
+            msg = message;
+            using (DarkRiftReader reader = message.GetReader())
+            {
+                return reader;
+            }
+        }
+    }
 }
