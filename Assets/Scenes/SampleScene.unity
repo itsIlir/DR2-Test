@@ -134,6 +134,8 @@ GameObject:
   - component: {fileID: 51441636}
   - component: {fileID: 51441635}
   - component: {fileID: 51441637}
+  - component: {fileID: 51441638}
+  - component: {fileID: 51441639}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -205,10 +207,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   client: {fileID: 51441635}
-  controllablePrefab: {fileID: 5254494519811453434, guid: 0baef8e9a7c919946b73ae6ff52f554c, type: 3}
-  networkPrefab: {fileID: 5254494519811453434, guid: cbd8518e67edf444fa6443b665f8f83e, type: 3}
-  inputField: {fileID: 418434078}
-  textToshow: {fileID: 1172308699}
+  _objectHandler: {fileID: 51441638}
+  _chatManager: {fileID: 51441639}
+--- !u!114 &51441638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51441634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2525d0b97a224af09a3e89d11cc1e484, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _controllablePrefab: {fileID: 5995024993839392500, guid: 0baef8e9a7c919946b73ae6ff52f554c, type: 3}
+  _networkPrefab: {fileID: 2955692999788074121, guid: cbd8518e67edf444fa6443b665f8f83e, type: 3}
+--- !u!114 &51441639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51441634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0df188dc11d4882baddcdf8e9e77a43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _input: {fileID: 418434078}
+  _chatText: {fileID: 1172308699}
 --- !u!1 &418434076
 GameObject:
   m_ObjectHideFlags: 0
