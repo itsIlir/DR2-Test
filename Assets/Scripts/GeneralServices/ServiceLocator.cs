@@ -1,16 +1,19 @@
-public static class ServiceLocator<T>
+namespace Services
 {
-    static T _service;
-
-    public static void Bind(T service)
+    public static class ServiceLocator<T>
     {
-        _service = service;
-    }
+        static T _service;
 
-    public static T Get()
-    {
-        if (_service == null)
-            throw new System.Exception($"You didn't bind any instance for {typeof(T).Name} service!!!");
-        return _service;
+        public static void Bind(T service)
+        {
+            _service = service;
+        }
+
+        public static T Get()
+        {
+            if (_service == null)
+                throw new System.Exception($"You didn't bind any instance for {typeof(T).Name} service!!!");
+            return _service;
+        }
     }
 }

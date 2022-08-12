@@ -9,7 +9,7 @@ namespace Backend
 {
     public class Backend : Plugin
     {
-        Dictionary<IClient, Player> players = new Dictionary<IClient, Player>();
+        readonly Dictionary<IClient, Player> Players = new Dictionary<IClient, Player>();
 
         public override bool ThreadSafe => false;
 
@@ -18,75 +18,67 @@ namespace Backend
         public Backend(PluginLoadData pluginLoadData) : base(pluginLoadData)
         {
             ClientManager.ClientConnected += OnClientConnected;
-            ClientManager.ClientDisconnected += OnClientDisconected;
+            ClientManager.ClientDisconnected += OnClientDisconnected;
         }
 
         private void OnClientConnected(object sender, ClientConnectedEventArgs e)
         {
             Console.WriteLine("Player Connected");
-            e.Client.MessageReceived += OnMessageRecived;
+            e.Client.MessageReceived += OnMessageReceived;
 
             Player newPlayer = CreateNewPlayer(e);
 
-            players.Add(e.Client, newPlayer);
+            Players.Add(e.Client, newPlayer);
 
-            SendNewPlayerToAll(e, newPlayer);
-            SendAllPlayersToNew(e);
+            SendNewPlayerToOldClients(e.Client, newPlayer);
+            SendAllPlayersToNewClient(e.Client);
         }
 
-        private void OnClientDisconected(object sender, ClientDisconnectedEventArgs e)
+        private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
             Console.WriteLine("Player Disconnected");
-            players.Remove(e.Client);
-            RemovePlayer(e);
+            e.Client.MessageReceived -= OnMessageReceived;
+            Players.Remove(e.Client);
+            RemovePlayer(e.Client);
         }
 
-        private void RemovePlayer(ClientDisconnectedEventArgs e)
+        private void RemovePlayer(IClient client)
         {
-            Remove remove = new Remove();
-            remove.ID = e.Client.ID;
-            using (Message removePlayerMessage = Message.Create((ushort)Tags.Tag.PLAYER_REMOVE, remove))
+            using var message = new ObjectRemove
             {
-                foreach (var client in ClientManager.GetAllClients().Where(x => x != e.Client))
-                {
-                    client.SendMessage(removePlayerMessage, SendMode.Unreliable);
-                }
-            }
-
+                Id = client.ID
+            }.Package();
+            SendMessageToAll(message, ObjectRemove.StaticSendMode);
         }
 
-        private void OnMessageRecived(object sender, MessageReceivedEventArgs e)
+        private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            using (Message message = e.GetMessage())
+            using var message = e.GetMessage();
+            if (VerifyMessage((NetworkMessageType)e.Tag, message, e.Client))
+                SendMessageToAllExcept(message, e.SendMode, e.Client);
+        }
+
+        private bool VerifyMessage(NetworkMessageType type, Message message, IClient client)
+        {
+            switch (type)
             {
-                using (DarkRiftReader reader = message.GetReader())
+                case NetworkMessageType.ObjectInit:
+                    return false;
+
+                case NetworkMessageType.ObjectLocation:
                 {
-                    switch (message.Tag)
+                    using var reader = message.GetReader();
+                    while (reader.Position < reader.Length)
                     {
-                        case (ushort)Tags.Tag.TEXT_MSG:
-                            while (reader.Position < reader.Length)
-                            {
-                                Chat chat = reader.ReadSerializable<Chat>();
-
-                                using (Message newMessage = Message.Create((ushort)Tags.Tag.TEXT_MSG, chat))
-                                {
-                                    foreach (var client in ClientManager.GetAllClients().Where(x => x != e.Client))
-                                    {
-                                        client.SendMessage(newMessage, SendMode.Reliable);
-                                    }
-                                }
-                            }
-                            break;
-
-                        case (ushort)Tags.Tag.PLAYER_MOVE:
-                            foreach (var client in ClientManager.GetAllClients().Where(x => x != e.Client))
-                            {
-                                client.SendMessage(message, SendMode.Unreliable);
-                            }
-                            break;
+                        var move = reader.ReadSerializable<ObjectLocation>();
+                        if (move.Id != client.ID)
+                            return false;
                     }
+
+                    break;
                 }
             }
+            return true;
         }
 
         private Player CreateNewPlayer(ClientConnectedEventArgs e)
@@ -100,39 +92,42 @@ namespace Backend
             );
         }
 
-        private void SendNewPlayerToAll(ClientConnectedEventArgs e, Player newPlayer)
+        private void SendNewPlayerToOldClients(IClient newClient, Player newPlayer)
         {
-            Spawn spawnToAll = new Spawn();
-            spawnToAll.ID = newPlayer.ID;
-            spawnToAll.X = newPlayer.X;
-            spawnToAll.Y = newPlayer.Y;
-
-            using (Message newPlayerMessage = Message.Create((ushort)Tags.Tag.SPAWN_PLAYER, spawnToAll))
+            using var message = new ObjectInit
             {
-                foreach (IClient client in ClientManager.GetAllClients().Where(x => x != e.Client))//TODO::Check performance
-                {
-                    client.SendMessage(newPlayerMessage, SendMode.Reliable);
-                }
-            }
+                Id = newPlayer.ID,
+                X = newPlayer.X,
+                Y = newPlayer.Y,
+            }.Package();
+            SendMessageToAllExcept(message, ObjectInit.StaticSendMode, newClient);
         }
 
-        private void SendAllPlayersToNew(ClientConnectedEventArgs e)
+        private void SendAllPlayersToNewClient(IClient newClient)
         {
-            using (DarkRiftWriter playerWriter = DarkRiftWriter.Create())
+            using var message = Players.Values.Select(player => new ObjectInit
             {
-                Spawn s = new Spawn();
-                foreach (Player player in players.Values)
-                {
-                    s.ID = player.ID;
-                    s.X = player.X;
-                    s.Y = player.Y;
-                    playerWriter.Write(s);
-                }
+                Id = player.ID,
+                X = player.X,
+                Y = player.Y,
+            }).Package();
+            newClient.SendMessage(message, ObjectInit.StaticSendMode);
+        }
 
-                using (Message playerMessage = Message.Create((ushort)Tags.Tag.SPAWN_PLAYER, playerWriter))
-                {
-                    e.Client.SendMessage(playerMessage, SendMode.Reliable);
-                }
+        private void SendMessageToAll(Message message, SendMode sendMode)
+        {
+            foreach (var client in Players.Keys)
+                client.SendMessage(message, sendMode);
+        }
+
+        private void SendMessageToAllExcept(Message message, SendMode sendMode, IClient ignoredClient)
+        {
+            foreach (var client in Players.Keys)
+            {
+                if (client == ignoredClient)
+                    continue;
+
+                client.SendMessage(message, sendMode);
             }
         }
     }

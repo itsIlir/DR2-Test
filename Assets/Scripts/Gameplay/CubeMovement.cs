@@ -1,59 +1,32 @@
 using UnityEngine;
 
-public class CubeMovement : MonoBehaviour
+namespace Gameplay
 {
-    NetworkManager networkManager;
-    readonly float speed = 10;
-
-    [SerializeField]
-    bool isOwner;
-
-    private void Awake()
+    public class CubeMovement : MonoBehaviour
     {
-        networkManager = FindObjectOfType<NetworkManager>();
-    }
+        readonly float speed = 10;
 
-    private void Update()
-    {
-        if (!IsInsideBounderies() || !isOwner)
-            return;
+        [SerializeField]
+        bool isOwner;
 
-        float inputX = Input.GetAxis("Horizontal");
-        float inputY = Input.GetAxis("Vertical");
+        private static readonly Bounds PlayBounds = new Bounds(Vector3.zero, new Vector3(10, 10));
 
-        var newPos = new Vector2(speed * inputX, speed *inputY) * Time.deltaTime;
-        networkManager.OnPlayerMove(newPos);
-        PlayerMove(newPos);
-    }
-
-    public void PlayerMove(Vector2 newPos)
-    {
-        transform.Translate(newPos);
-    }
-
-    private bool IsInsideBounderies()
-    {
-        bool state = true;
-        if (transform.position.x > 20)
+        private void Update()
         {
-            transform.position = new Vector3(19.9f, transform.position.y, transform.position.z);
-            state = false;
+            if (!isOwner)
+                return;
+
+            float inputX = Input.GetAxis("Horizontal");
+            float inputY = Input.GetAxis("Vertical");
+
+            var newPos = (Vector2)transform.position + new Vector2(speed * inputX, speed * inputY) * Time.deltaTime;
+            PlayerMove(newPos);
         }
-        if (transform.position.x < -10)
+
+        public void PlayerMove(Vector2 newPos)
         {
-            transform.position = new Vector3(-9.9f, transform.position.y, transform.position.z);
-            state = false;
+            newPos = PlayBounds.ClosestPoint(newPos);
+            transform.position = newPos;
         }
-        if (transform.position.y > 10)
-        {
-            transform.position = new Vector3(transform.position.x, 9.9f, transform.position.z);
-            state = false;
-        }
-        if (transform.position.y < -10)
-        {
-            transform.position = new Vector3(transform.position.x, -9.9f, transform.position.z);
-            state = false;
-        }
-        return state;
     }
 }

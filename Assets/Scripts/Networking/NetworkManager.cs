@@ -1,77 +1,65 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
+using DarkRift.Client.Unity;
 using DarkRift;
 using GameModels;
-using UnityEngine.UI;
+using DarkRift.Client;
+using Gameplay;
+using Services;
 
-public class NetworkManager : MonoBehaviour
+namespace Networking
 {
-    [SerializeField]
-    GameObject controllablePrefab, networkPrefab;
-
-    [SerializeField]
-    InputField inputField;
-
-    [SerializeField]
-    Text textToshow;
-
-    readonly Dictionary<ushort, CubeMovement> players = new Dictionary<ushort, CubeMovement>();
-
-    void Awake()
+    public class NetworkManager : MonoBehaviour
     {
-        Application.runInBackground = true;
+        [SerializeField]
+        ObjectHandler _objectHandler;
 
-        if (controllablePrefab == null)
-            Debug.LogError("Controllable Prefab unassigned in PlayerSpawner.");
+        [SerializeField]
+        ChatManager _chatManager;
 
-        if (networkPrefab == null)
-            Debug.LogError("Network Prefab unassigned in PlayerSpawner.");
+        INetworkService _networkService;
 
-        ServiceLocator<INetworkService>.Get().OnMessageRecived += OnMessageRecived;
-    }
-
-    void OnDestroy()
-    {
-        ServiceLocator<INetworkService>.Get().OnMessageRecived -= OnMessageRecived;
-    }
-
-    public void OnButtonClick()
-    {
-        ServiceLocator<INetworkService>.Get().SendTextMessage(inputField.text);
-    }
-
-    public void OnPlayerMove(Vector2 moveVector)
-    {
-        ServiceLocator<INetworkService>.Get().SendMoveMessage(moveVector);
-    }
-
-    void OnMessageRecived(object sender, DarkRiftReader reader, Message message)
-    {
-        switch (message.Tag)
+        public void Awake()
         {
-            case (ushort)Tags.Tag.SPAWN_PLAYER:
-                while (reader.Position < reader.Length)
-                {
-                    CubeMovement gameObject = ServiceLocator<INetworkService>.Get().ReadSpawn(
-                        reader, controllablePrefab, networkPrefab, out var id);
-                    players.Add(id, gameObject);
-                }
-                break;
+            Application.runInBackground = true;
 
-            case (ushort)Tags.Tag.TEXT_MSG:
-                while (reader.Position < reader.Length)
-                    textToshow.text = ServiceLocator<INetworkService>.Get().ReadChat(reader);
-                break;
+            _networkService = ServiceLocator<INetworkService>.Get();
+            _networkService.Client.MessageReceived += InitialMessageReceived;
 
-            case (ushort)Tags.Tag.PLAYER_MOVE:
-                while (reader.Position < reader.Length)
-                    ServiceLocator<INetworkService>.Get().ReadMovement(reader, players);
-                break;
+            _networkService.Connect();
 
-            case (ushort)Tags.Tag.PLAYER_REMOVE:
-                while(reader.Position < reader.Length)
-                    ServiceLocator<INetworkService>.Get().ReadRemove(reader, players);
-                break;
+            _networkService.GetProcessor<ObjectInit>().OnMessage += _objectHandler.OnObjectInit;
+            _networkService.GetProcessor<ObjectLocation>().OnMessage += _objectHandler.OnObjectLocation;
+            _networkService.GetProcessor<ObjectRemove>().OnMessage += _objectHandler.OnObjectRemove;
+            _networkService.GetProcessor<ChatMessage>().OnMessage += _chatManager.ReceiveMessage;
+            _chatManager.OnSendMessage += _networkService.SendMessage;
+        }
+
+        private void InitialMessageReceived(object sender, MessageReceivedEventArgs e)
+        {
+            var client = _networkService.Client;
+            Debug.Log($"Connected! Client ID {client.ID}");
+            _objectHandler.LocalClientId = client.ID;
+            client.MessageReceived -= InitialMessageReceived;
+            StartCoroutine(UpdateLocalPlayerLocation());
+        }
+
+        private IEnumerator UpdateLocalPlayerLocation()
+        {
+            var sendDelay = new WaitForSecondsRealtime(0.01f);
+            var client = _networkService.Client;
+            while (client.ConnectionState == ConnectionState.Connected)
+            {
+                if (_objectHandler.ObjectExists(client.ID))
+                    _networkService.SendMessage(_objectHandler.GetObjectLocation(client.ID));
+                yield return sendDelay;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            _networkService.Disconnect();
+            _chatManager.OnSendMessage -= _networkService.SendMessage;
         }
     }
 }

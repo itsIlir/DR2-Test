@@ -1,15 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
+using Networking;
 using UnityEngine;
 
-public class ServiceClerk : MonoBehaviour
+namespace Services
 {
-    [SerializeField] 
-    NetworkService _networkServicePrefab;
-
-    void Awake()
+    public class ServiceClerk : MonoBehaviour
     {
-        var networkService = Instantiate(_networkServicePrefab);
-        ServiceLocator<INetworkService>.Bind(networkService);
+        [SerializeField]
+        NetworkService _networkServicePrefab;
+
+        void Awake()
+        {
+            var networkService = Instantiate(_networkServicePrefab);
+            ServiceLocator<INetworkService>.Bind(networkService);
+        }
     }
 }

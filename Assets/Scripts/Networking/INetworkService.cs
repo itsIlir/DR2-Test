@@ -1,23 +1,43 @@
-using DarkRift;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using DarkRift;
+using DarkRift.Client.Unity;
+using GameModels;
 
-public interface INetworkService
+namespace Networking
 {
-    event Action<object, DarkRiftReader, Message> OnMessageRecived;
+    public interface INetworkService
+    {
+        UnityClient Client { get; }
+        MessageProcessor<T> GetProcessor<T>() where T : struct, INetworkData;
+        void Connect();
+        void Disconnect();
+        void SendMessage<T>(T networkMessage) where T : struct, INetworkData;
+        void SendMessages<T>(IEnumerable<T> networkMessage) where T : struct, INetworkData;
+    }
 
-    int NetworkID { get; }
+    interface IMessageProcessor
+    {
+        void ProcessMessage(DarkRiftReader reader);
+        void ClearMessageEvents();
+    }
 
-    void SendTextMessage(string inputedText);
+    public sealed class MessageProcessor<T> : IMessageProcessor where T : struct, INetworkData
+    {
+        public event Action<T> OnMessage;
 
-    void SendMoveMessage(Vector2 position);
+        public void ProcessMessage(DarkRiftReader reader)
+        {
+            if (OnMessage == null)
+                return;
 
-    CubeMovement ReadSpawn(DarkRiftReader reader, GameObject controllablePrefab, GameObject networkPrefab, out ushort id);
+            while (reader.Position < reader.Length)
+                OnMessage(reader.ReadSerializable<T>());
+        }
 
-    string ReadChat(DarkRiftReader reader);
-
-    void ReadMovement(DarkRiftReader reader, Dictionary<ushort, CubeMovement> players);
-
-    void ReadRemove(DarkRiftReader reader, Dictionary<ushort, CubeMovement> players);
+        public void ClearMessageEvents()
+        {
+            OnMessage = null;
+        }
+    }
 }
