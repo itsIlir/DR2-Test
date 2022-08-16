@@ -1,43 +1,18 @@
-using System;
 using System.Collections.Generic;
-using DarkRift;
-using DarkRift.Client.Unity;
+using System.Net;
+using System.Threading.Tasks;
+using DarkRift.Client;
 using GameModels;
 
 namespace Networking
 {
     public interface INetworkService
     {
-        UnityClient Client { get; }
+        DarkRiftClient Client { get; }
         MessageProcessor<T> GetProcessor<T>() where T : struct, INetworkData;
-        void Connect();
+        Task Connect(IPAddress ip, int port);
         void Disconnect();
         void SendMessage<T>(T networkMessage) where T : struct, INetworkData;
-        void SendMessages<T>(IEnumerable<T> networkMessage) where T : struct, INetworkData;
-    }
-
-    interface IMessageProcessor
-    {
-        void ProcessMessage(DarkRiftReader reader);
-        void ClearMessageEvents();
-    }
-
-    public sealed class MessageProcessor<T> : IMessageProcessor where T : struct, INetworkData
-    {
-        public event Action<T> OnMessage;
-
-        public void ProcessMessage(DarkRiftReader reader)
-        {
-            if (OnMessage == null)
-                return;
-
-            while (reader.Position < reader.Length)
-                OnMessage(reader.ReadSerializable<T>());
-        }
-
-        public void ClearMessageEvents()
-        {
-            OnMessage = null;
-        }
+        void SendMessages<T>(IEnumerable<T> networkMessages) where T : struct, INetworkData;
     }
 }

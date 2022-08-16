@@ -8,6 +8,8 @@ namespace GameModels
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
+
+        /// The object's Id.
         public ushort Id;
 
         public void Deserialize(DeserializeEvent e)
@@ -19,6 +21,5 @@ namespace GameModels
         {
             e.Writer.Write(Id);
         }
-
     }
 }

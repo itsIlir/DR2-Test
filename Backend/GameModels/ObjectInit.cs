@@ -9,22 +9,22 @@ namespace GameModels
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
+        /// The object's Id.
         public ushort Id;
-        public float X;
-        public float Y;
+
+        /// Initial object transform.
+        public MovementData Movement;
 
         public void Deserialize(DeserializeEvent e)
         {
             Id = e.Reader.ReadUInt16();
-            X = e.Reader.ReadSingle();
-            Y = e.Reader.ReadSingle();
+            Movement.Deserialize(e);
         }
 
         public void Serialize(SerializeEvent e)
         {
             e.Writer.Write(Id);
-            e.Writer.Write(X); 
-            e.Writer.Write(Y);
+            Movement.Serialize(e);
         }
     }
 }

@@ -18,17 +18,21 @@ namespace Gameplay
             => new ObjectLocation
             {
                 Id = id,
-                X = _players[id].transform.position.x,
-                Y = _players[id].transform.position.y,
+                Movement = new MovementData
+                {
+                    Flags = MovementFlags.Position2D,
+                    PositionX = _players[id].transform.position.x,
+                    PositionY = _players[id].transform.position.y,
+                }
             };
 
         public void OnObjectInit(ObjectInit init)
         {
-            Debug.Log($"Init Object ID {init.Id} at {init.X}, {init.Y}.");
+            Debug.Log($"Init Object ID {init.Id}.");
             var prefab = init.Id == LocalClientId ? _controllablePrefab : _networkPrefab;
             var cubeMovement = Instantiate(
                 prefab,
-                new Vector3(init.X, init.Y),
+                new Vector3(init.Movement.PositionX, init.Movement.PositionY),
                 Quaternion.identity
             );
 
@@ -43,7 +47,7 @@ namespace Gameplay
                 return;
             }
 
-            _players[location.Id].PlayerMove(new Vector2(location.X, location.Y));
+            _players[location.Id].PlayerMove(new Vector2(location.Movement.PositionX, location.Movement.PositionY));
         }
 
         public void OnObjectRemove(ObjectRemove remove)
@@ -54,4 +58,3 @@ namespace Gameplay
         }
     }
 }
-

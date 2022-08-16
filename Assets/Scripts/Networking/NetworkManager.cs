@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Net;
 using UnityEngine;
 using DarkRift.Client.Unity;
 using DarkRift;
@@ -19,14 +20,11 @@ namespace Networking
 
         INetworkService _networkService;
 
-        public void Awake()
+        private void Awake()
         {
             Application.runInBackground = true;
 
             _networkService = ServiceLocator<INetworkService>.Get();
-            _networkService.Client.MessageReceived += InitialMessageReceived;
-
-            _networkService.Connect();
 
             _networkService.GetProcessor<ObjectInit>().OnMessage += _objectHandler.OnObjectInit;
             _networkService.GetProcessor<ObjectLocation>().OnMessage += _objectHandler.OnObjectLocation;
@@ -35,12 +33,11 @@ namespace Networking
             _chatManager.OnSendMessage += _networkService.SendMessage;
         }
 
-        private void InitialMessageReceived(object sender, MessageReceivedEventArgs e)
+        private async void Start()
         {
-            var client = _networkService.Client;
-            Debug.Log($"Connected! Client ID {client.ID}");
-            _objectHandler.LocalClientId = client.ID;
-            client.MessageReceived -= InitialMessageReceived;
+            await _networkService.Connect(IPAddress.Parse("127.0.0.1"), 4296);
+            Debug.Log($"Connected! Client ID {_networkService.Client.ID}");
+            _objectHandler.LocalClientId = _networkService.Client.ID;
             StartCoroutine(UpdateLocalPlayerLocation());
         }
 

@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using DarkRift;
 using DarkRift.Client;
-using DarkRift.Client.Unity;
 using GameModels;
 using UnityEngine;
 
@@ -10,13 +11,12 @@ namespace Networking
 {
     public class NetworkService : MonoBehaviour, INetworkService
     {
-        [SerializeField]
-        UnityClient _client;
-
         readonly Dictionary<NetworkMessageType, IMessageProcessor>
             MessageProcessors = new Dictionary<NetworkMessageType, IMessageProcessor>();
 
-        public UnityClient Client => _client;
+        bool _mayProcessMessages = false;
+
+        public DarkRiftClient Client { get; private set; }
 
         public MessageProcessor<T> GetProcessor<T>() where T : struct, INetworkData
         {
@@ -29,10 +29,38 @@ namespace Networking
             return processor as MessageProcessor<T>;
         }
 
-        public void Connect()
+        private void Awake()
         {
+            Client = new DarkRiftClient();
+        }
+
+        private void Update()
+        {
+            if (!_mayProcessMessages)
+                return;
+
+            foreach (var processor in MessageProcessors.Values)
+                processor.ProcessMessages();
+        }
+
+        public async Task Connect(IPAddress ip, int port)
+        {
+            var connectionTask = new UniTaskCompletionSource();
             Client.MessageReceived += OnMessageReceived;
             Client.Disconnected += OnDisconnected;
+            Client.ConnectInBackground(ip, port, false, exception =>
+            {
+                if (exception == null)
+                    connectionTask.TrySetResult();
+                else
+                    connectionTask.TrySetException(exception);
+            });
+            await connectionTask.Task;
+
+            // The await on the callback will be called on a separate thread.
+            // For the MessageProcessors to behave logically, we need to return to main thread before processing.
+            await UniTask.SwitchToMainThread();
+            _mayProcessMessages = true;
         }
 
         public void Disconnect()
@@ -46,8 +74,13 @@ namespace Networking
                 Client.ConnectionState == ConnectionState.Interrupted)
                 Client.Disconnect();
 
+            _mayProcessMessages = false;
+
             foreach (var processor in MessageProcessors.Values)
-                processor.ClearMessageEvents();
+            {
+                processor.ProcessMessages();
+                processor.ClearMessageHandlers();
+            }
         }
 
         public void SendMessage<T>(T networkMessage) where T : struct, INetworkData
@@ -56,9 +89,9 @@ namespace Networking
             Client.SendMessage(message, networkMessage.SendMode);
         }
 
-        public void SendMessages<T>(IEnumerable<T> networkMessage) where T : struct, INetworkData
+        public void SendMessages<T>(IEnumerable<T> networkMessages) where T : struct, INetworkData
         {
-            using var message = networkMessage.Package();
+            using var message = networkMessages.Package();
             Client.SendMessage(message, default(T).SendMode);
         }
 
@@ -76,7 +109,7 @@ namespace Networking
             }
 
             using var reader = message.GetReader();
-            processor.ProcessMessage(reader);
+            processor.EnqueueMessages(reader);
         }
     }
 }

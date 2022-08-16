@@ -23,7 +23,6 @@ namespace Backend
 
         private void OnClientConnected(object sender, ClientConnectedEventArgs e)
         {
-            Console.WriteLine("Player Connected");
             e.Client.MessageReceived += OnMessageReceived;
 
             Player newPlayer = CreateNewPlayer(e);
@@ -36,7 +35,6 @@ namespace Backend
 
         private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
-            Console.WriteLine("Player Disconnected");
             e.Client.MessageReceived -= OnMessageReceived;
             Players.Remove(e.Client);
             RemovePlayer(e.Client);
@@ -63,6 +61,7 @@ namespace Backend
             switch (type)
             {
                 case NetworkMessageType.ObjectInit:
+                case NetworkMessageType.ObjectRemove:
                     return false;
 
                 case NetworkMessageType.ObjectLocation:
@@ -71,6 +70,30 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var move = reader.ReadSerializable<ObjectLocation>();
+                        if (move.Id != client.ID)
+                            return false;
+                    }
+
+                    break;
+                }
+                case NetworkMessageType.PlayerMovement:
+                {
+                    using var reader = message.GetReader();
+                    while (reader.Position < reader.Length)
+                    {
+                        var move = reader.ReadSerializable<PlayerMovement>();
+                        if (move.Id != client.ID)
+                            return false;
+                    }
+
+                    break;
+                }
+                case NetworkMessageType.PlayerInteract:
+                {
+                    using var reader = message.GetReader();
+                    while (reader.Position < reader.Length)
+                    {
+                        var move = reader.ReadSerializable<PlayerInteract>();
                         if (move.Id != client.ID)
                             return false;
                     }
@@ -97,8 +120,12 @@ namespace Backend
             using var message = new ObjectInit
             {
                 Id = newPlayer.ID,
-                X = newPlayer.X,
-                Y = newPlayer.Y,
+                Movement = new MovementData
+                {
+                    Flags = MovementFlags.Position2D,
+                    PositionX = newPlayer.X,
+                    PositionY = newPlayer.Y,
+                }
             }.Package();
             SendMessageToAllExcept(message, ObjectInit.StaticSendMode, newClient);
         }
@@ -108,9 +135,14 @@ namespace Backend
             using var message = Players.Values.Select(player => new ObjectInit
             {
                 Id = player.ID,
-                X = player.X,
-                Y = player.Y,
+                Movement = new MovementData
+                {
+                    Flags = MovementFlags.Position2D,
+                    PositionX = player.X,
+                    PositionY = player.Y,
+                }
             }).Package();
+            Console.WriteLine($"Sending object initialization to new client {newClient.ID}.");
             newClient.SendMessage(message, ObjectInit.StaticSendMode);
         }
 

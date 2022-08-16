@@ -5,7 +5,7 @@
         ObjectInit = 0,
         ObjectRemove = 1,
         ObjectLocation = 2,
-        PlayerInput = 3,
+        PlayerMovement = 3,
         PlayerInteract = 4,
         ChatMessage = 5,
     }

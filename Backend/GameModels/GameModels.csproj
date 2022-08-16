@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\&quot;Assets\Plugins&quot; /Y&#xA;xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)&quot;..\&quot;Server\Plugins&quot; /Y" />
+    <Exec Command="xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)..\Assets\Plugins&quot; /Y&#xA;xcopy &quot;$(SolutionDir)GameModels\bin\Debug\netcoreapp3.1\GameModels.dll&quot; &quot;$(SolutionDir)..\Server\Plugins&quot; /Y" />
   </Target>
 
 </Project>
