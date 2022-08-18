@@ -10,11 +10,11 @@ namespace GameModels
         public SendMode SendMode => StaticSendMode;
 
         /// The object's Id.
-        public ushort Id;
+        public uint Id;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt16();
+            Id = e.Reader.ReadUInt32();
         }
 
         public void Serialize(SerializeEvent e)

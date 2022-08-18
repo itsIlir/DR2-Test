@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 51441635}
   - component: {fileID: 51441638}
   - component: {fileID: 51441639}
+  - component: {fileID: 51441637}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -154,7 +155,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca95f4ab08f74994d9fadd9dc4fbb51e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _objectHandler: {fileID: 51441638}
+  _objectManager: {fileID: 51441638}
+  _playerManager: {fileID: 51441637}
   _chatManager: {fileID: 51441639}
 --- !u!4 &51441636
 Transform:
@@ -170,6 +172,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &51441637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51441634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ea3fd14963b43babd1ad7e06addf697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _controllablePrefab: {fileID: 5995024993839392500, guid: f06c04d2d5b799b4ba940031e954dafa, type: 3}
+  _networkPrefab: {fileID: 2955692999788074121, guid: 21980ef66e486d746a5a9a6d92b84cc2, type: 3}
 --- !u!114 &51441638
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -182,8 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2525d0b97a224af09a3e89d11cc1e484, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _controllablePrefab: {fileID: 5995024993839392500, guid: f06c04d2d5b799b4ba940031e954dafa, type: 3}
-  _networkPrefab: {fileID: 2955692999788074121, guid: 21980ef66e486d746a5a9a6d92b84cc2, type: 3}
+  _playerManager: {fileID: 51441637}
 --- !u!114 &51441639
 MonoBehaviour:
   m_ObjectHideFlags: 0

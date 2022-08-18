@@ -28,7 +28,7 @@ namespace GameModels
         public SendMode SendMode => StaticSendMode;
 
         /// The player object's Id.
-        public ushort Id;
+        public uint Id;
 
         /// The type of interaction performed by the player object.
         public PlayerInteractType Interaction;
@@ -37,14 +37,14 @@ namespace GameModels
         public TargetData Target;
 
         /// Player object's transform.
-        public MovementData Movement;
+        public LocationData Location;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt16();
+            Id = e.Reader.ReadUInt32();
             Interaction = (PlayerInteractType) e.Reader.ReadUInt16();
             Target.Deserialize(e);
-            Movement.Deserialize(e);
+            Location.Deserialize(e);
         }
 
         public void Serialize(SerializeEvent e)
@@ -52,7 +52,7 @@ namespace GameModels
             e.Writer.Write(Id);
             e.Writer.Write((ushort)Interaction);
             Target.Serialize(e);
-            Movement.Serialize(e);
+            Location.Serialize(e);
         }
     }
 }

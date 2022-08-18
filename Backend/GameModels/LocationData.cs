@@ -6,6 +6,7 @@ namespace GameModels
     [Flags]
     public enum MovementFlags : byte
     {
+        None = 0,
         Position2D = 1 << 0,
         Position3D = 1 << 1,
         Rotation2D = 1 << 2,
@@ -16,7 +17,7 @@ namespace GameModels
         AngularVelocity3D = 1 << 7,
     }
 
-    public struct MovementData : IDarkRiftSerializable
+    public struct LocationData : IDarkRiftSerializable
     {
         /// Serialization flags.
         public MovementFlags Flags;

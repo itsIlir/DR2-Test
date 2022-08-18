@@ -10,20 +10,20 @@ namespace GameModels
         public SendMode SendMode => StaticSendMode;
 
         /// The player object's Id.
-        public ushort Id;
+        public uint Id;
 
         /// The global input vector.
         public float GlobalInputX, GlobalInputY;
 
         /// Optional transform update.
-        public MovementData Movement;
+        public LocationData Location;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt16();
+            Id = e.Reader.ReadUInt32();
             GlobalInputX = e.Reader.ReadSingle();
             GlobalInputY = e.Reader.ReadSingle();
-            Movement.Deserialize(e);
+            Location.Deserialize(e);
         }
 
         public void Serialize(SerializeEvent e)
@@ -31,7 +31,7 @@ namespace GameModels
             e.Writer.Write(Id);
             e.Writer.Write(GlobalInputX);
             e.Writer.Write(GlobalInputY);
-            Movement.Serialize(e);
+            Location.Serialize(e);
         }
     }
 }

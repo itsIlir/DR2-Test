@@ -21,8 +21,8 @@ namespace GameModels
         /// Serialized if TargetFlags.Position3D is set.
         public float PositionZ;
 
-        /// Serialized if TargetFlags.ObjectId is set, TargetId an object's id number.
-        public ushort TargetId;
+        /// Serialized if TargetFlags.ObjectId is set, TargetId a network object's Id.
+        public uint TargetId;
 
         public void Deserialize(DeserializeEvent e)
         {
@@ -43,7 +43,7 @@ namespace GameModels
 
             if ((Flags & TargetFlags.ObjectId) != 0)
             {
-                TargetId = e.Reader.ReadUInt16();
+                TargetId = e.Reader.ReadUInt32();
             }
         }
 

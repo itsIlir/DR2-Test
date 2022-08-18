@@ -9,7 +9,14 @@ namespace Backend
 {
     public class Backend : Plugin
     {
-        readonly Dictionary<IClient, Player> Players = new Dictionary<IClient, Player>();
+        private readonly Dictionary<IClient, HashSet<uint>> _clientOwnedObjects =
+            new Dictionary<IClient, HashSet<uint>>();
+
+        private readonly Dictionary<uint, IClient> _objectOwners = new Dictionary<uint, IClient>();
+
+        private readonly Dictionary<uint, NetworkObject> _objects = new Dictionary<uint, NetworkObject>();
+
+        public uint NetworkObjectIdCounter { get; private set; } = 1000;
 
         public override bool ThreadSafe => false;
 
@@ -25,9 +32,11 @@ namespace Backend
         {
             e.Client.MessageReceived += OnMessageReceived;
 
-            Player newPlayer = CreateNewPlayer(e);
+            var newPlayer = CreateNewPlayer(e);
 
-            Players.Add(e.Client, newPlayer);
+            _objects.Add(newPlayer.Id, newPlayer);
+            _objectOwners.Add(newPlayer.Id, e.Client);
+            _clientOwnedObjects.Add(e.Client, new HashSet<uint> {newPlayer.Id});
 
             SendNewPlayerToOldClients(e.Client, newPlayer);
             SendAllPlayersToNewClient(e.Client);
@@ -36,30 +45,40 @@ namespace Backend
         private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
             e.Client.MessageReceived -= OnMessageReceived;
-            Players.Remove(e.Client);
-            RemovePlayer(e.Client);
-        }
 
-        private void RemovePlayer(IClient client)
-        {
-            using var message = new ObjectRemove
+            var removeClientObjectsMessage = _clientOwnedObjects[e.Client].Select(id => new ObjectRemove
             {
-                Id = client.ID
-            }.Package();
-            SendMessageToAll(message, ObjectRemove.StaticSendMode);
+                Id = id
+            }).Package();
+            SendMessageToAll(removeClientObjectsMessage, ObjectRemove.StaticSendMode);
+
+            foreach (var networkObjectId in _clientOwnedObjects[e.Client])
+            {
+                // TODO [Emanuel, 2022-08-17]: Check if object should be persistent and be repossessed.
+                _objects.Remove(networkObjectId);
+                _objectOwners.Remove(networkObjectId);
+            }
+            _clientOwnedObjects.Remove(e.Client);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
             using var message = e.GetMessage();
-            if (VerifyMessage((NetworkMessageType)e.Tag, message, e.Client))
+            if (VerifyAndProcessMessage((NetworkMessageType)e.Tag, message, e.Client))
                 SendMessageToAllExcept(message, e.SendMode, e.Client);
         }
 
-        private bool VerifyMessage(NetworkMessageType type, Message message, IClient client)
+        private readonly List<(NetworkObject, LocationData)> _objectLocationUpdateQueue =
+            new List<(NetworkObject, LocationData)>();
+        private bool VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
+            _objectLocationUpdateQueue.Clear();
             switch (type)
             {
+                case NetworkMessageType.ChatMessage:
+                    // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
+                    return true;
+
                 case NetworkMessageType.ObjectInit:
                 case NetworkMessageType.ObjectRemove:
                     return false;
@@ -69,9 +88,11 @@ namespace Backend
                     using var reader = message.GetReader();
                     while (reader.Position < reader.Length)
                     {
-                        var move = reader.ReadSerializable<ObjectLocation>();
-                        if (move.Id != client.ID)
+                        var location = reader.ReadSerializable<ObjectLocation>();
+                        if (!_objectOwners.TryGetValue(location.Id, out var objectOwner) || objectOwner != client)
                             return false;
+
+                        _objectLocationUpdateQueue.Add((_objects[location.Id], location.Location));
                     }
 
                     break;
@@ -82,8 +103,10 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var move = reader.ReadSerializable<PlayerMovement>();
-                        if (move.Id != client.ID)
+                        if (!_objectOwners.TryGetValue(move.Id, out var objectOwner) || objectOwner != client)
                             return false;
+
+                        _objectLocationUpdateQueue.Add((_objects[move.Id], move.Location));
                     }
 
                     break;
@@ -93,54 +116,99 @@ namespace Backend
                     using var reader = message.GetReader();
                     while (reader.Position < reader.Length)
                     {
-                        var move = reader.ReadSerializable<PlayerInteract>();
-                        if (move.Id != client.ID)
+                        var interact = reader.ReadSerializable<PlayerInteract>();
+                        if (!_objectOwners.TryGetValue(interact.Id, out var objectOwner) || objectOwner != client)
                             return false;
+
+                        _objectLocationUpdateQueue.Add((_objects[interact.Id], interact.Location));
                     }
 
                     break;
                 }
             }
+
+            foreach (var (networkObject, location) in _objectLocationUpdateQueue)
+                UpdateLocation(ref networkObject.Location, location);
+
             return true;
         }
 
-        private Player CreateNewPlayer(ClientConnectedEventArgs e)
+        private static void UpdateLocation(ref LocationData location, in LocationData updateData)
         {
-            Random r = new Random();
-            return new Player
+            location.Flags = updateData.Flags;
+            if ((updateData.Flags & (MovementFlags.Position2D | MovementFlags.Position3D)) != 0)
+            {
+                location.PositionX = updateData.PositionX;
+                location.PositionY = updateData.PositionY;
+                location.PositionZ = updateData.PositionZ;
+            }
+
+            if ((updateData.Flags & MovementFlags.Rotation2D) != 0)
+            {
+                location.Angle = updateData.Angle;
+            }
+
+            if ((updateData.Flags & MovementFlags.Rotation3D) != 0)
+            {
+                location.Pitch = updateData.Pitch;
+                location.Yaw = updateData.Yaw;
+                location.Roll = updateData.Roll;
+            }
+
+            if ((updateData.Flags & (MovementFlags.LinearVelocity2D | MovementFlags.LinearVelocity3D)) != 0)
+            {
+                location.LinearVelocityX = updateData.LinearVelocityX;
+                location.LinearVelocityY = updateData.LinearVelocityY;
+                location.LinearVelocityZ = updateData.LinearVelocityZ;
+            }
+
+            if ((updateData.Flags & MovementFlags.AngularVelocity2D) != 0)
+            {
+                location.AngularVelocitySpeed = updateData.AngularVelocitySpeed;
+            }
+
+            if ((updateData.Flags & MovementFlags.AngularVelocity3D) != 0)
+            {
+                location.AngularVelocitySpeed = updateData.AngularVelocitySpeed;
+                location.AngularVelocityAxisX = updateData.AngularVelocityAxisX;
+                location.AngularVelocityAxisY = updateData.AngularVelocityAxisY;
+                location.AngularVelocityAxisZ = updateData.AngularVelocityAxisZ;
+            }
+        }
+
+        private NetworkObject CreateNewPlayer(ClientConnectedEventArgs e)
+        {
+            return new NetworkObject
             (
-                e.Client.ID,
-                r.Next(-10, 20),
-                r.Next(-10, 10)
+                NetworkObjectIdCounter++,
+                ObjectType.Player,
+                new LocationData
+                {
+                    Flags = MovementFlags.None,
+                }
             );
         }
 
-        private void SendNewPlayerToOldClients(IClient newClient, Player newPlayer)
+        private void SendNewPlayerToOldClients(IClient newClient, NetworkObject newNetworkObject)
         {
             using var message = new ObjectInit
             {
-                Id = newPlayer.ID,
-                Movement = new MovementData
-                {
-                    Flags = MovementFlags.Position2D,
-                    PositionX = newPlayer.X,
-                    PositionY = newPlayer.Y,
-                }
+                Id = newNetworkObject.Id,
+                OwnerId = newClient.ID,
+                Type = newNetworkObject.Type,
+                Location = newNetworkObject.Location,
             }.Package();
             SendMessageToAllExcept(message, ObjectInit.StaticSendMode, newClient);
         }
 
         private void SendAllPlayersToNewClient(IClient newClient)
         {
-            using var message = Players.Values.Select(player => new ObjectInit
+            using var message = _objects.Values.Select(networkObject => new ObjectInit
             {
-                Id = player.ID,
-                Movement = new MovementData
-                {
-                    Flags = MovementFlags.Position2D,
-                    PositionX = player.X,
-                    PositionY = player.Y,
-                }
+                Id = networkObject.Id,
+                OwnerId = _objectOwners[networkObject.Id].ID,
+                Type = networkObject.Type,
+                Location = networkObject.Location,
             }).Package();
             Console.WriteLine($"Sending object initialization to new client {newClient.ID}.");
             newClient.SendMessage(message, ObjectInit.StaticSendMode);
@@ -148,13 +216,13 @@ namespace Backend
 
         private void SendMessageToAll(Message message, SendMode sendMode)
         {
-            foreach (var client in Players.Keys)
+            foreach (var client in _clientOwnedObjects.Keys)
                 client.SendMessage(message, sendMode);
         }
 
         private void SendMessageToAllExcept(Message message, SendMode sendMode, IClient ignoredClient)
         {
-            foreach (var client in Players.Keys)
+            foreach (var client in _clientOwnedObjects.Keys)
             {
                 if (client == ignoredClient)
                     continue;

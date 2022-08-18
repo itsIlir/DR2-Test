@@ -10,21 +10,21 @@ namespace GameModels
         public SendMode SendMode => StaticSendMode;
 
         /// The object's Id.
-        public ushort Id;
+        public uint Id;
 
         /// Updated object transform.
-        public MovementData Movement;
+        public LocationData Location;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt16();
-            Movement.Deserialize(e);
+            Id = e.Reader.ReadUInt32();
+            Location.Deserialize(e);
         }
 
         public void Serialize(SerializeEvent e)
         {
             e.Writer.Write(Id);
-            Movement.Serialize(e);
+            Location.Serialize(e);
         }
     }
 }

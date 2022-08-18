@@ -2,6 +2,13 @@
 
 namespace GameModels
 {
+    public enum ObjectType : byte
+    {
+        Player,
+        Physics,
+        NPC,
+    }
+
     public struct ObjectInit : INetworkData
     {
         public const NetworkMessageType StaticMessageType = NetworkMessageType.ObjectInit;
@@ -10,21 +17,44 @@ namespace GameModels
         public SendMode SendMode => StaticSendMode;
 
         /// The object's Id.
-        public ushort Id;
+        public uint Id;
+
+        /// The object's client's Id.
+        public ushort OwnerId;
+
+        // The object's type. Player objects cannot be possessed.
+        public ObjectType Type;
+
+        // If the object isn't a player, this object is possessing a world entity.
+        public uint PossessId;
 
         /// Initial object transform.
-        public MovementData Movement;
+        public LocationData Location;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt16();
-            Movement.Deserialize(e);
+            Id = e.Reader.ReadUInt32();
+            OwnerId = e.Reader.ReadUInt16();
+            Type = (ObjectType) e.Reader.ReadByte();
+            if (Type != ObjectType.Player)
+            {
+                PossessId = e.Reader.ReadUInt32();
+            }
+
+            Location.Deserialize(e);
         }
 
         public void Serialize(SerializeEvent e)
         {
             e.Writer.Write(Id);
-            Movement.Serialize(e);
+            e.Writer.Write(OwnerId);
+            e.Writer.Write((byte)Type);
+            if (Type != ObjectType.Player)
+            {
+                e.Writer.Write(PossessId);
+            }
+
+            Location.Serialize(e);
         }
     }
 }
