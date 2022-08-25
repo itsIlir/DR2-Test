@@ -9,12 +9,8 @@ namespace Backend
 {
     public class Backend : Plugin
     {
-        private readonly Dictionary<IClient, HashSet<uint>> _clientOwnedObjects =
-            new Dictionary<IClient, HashSet<uint>>();
-
-        private readonly Dictionary<uint, IClient> _objectOwners = new Dictionary<uint, IClient>();
-
-        private readonly Dictionary<uint, NetworkObject> _objects = new Dictionary<uint, NetworkObject>();
+        private readonly RoomManager _roomManager = new RoomManager();
+        private readonly ObjectManager _objectManager = new ObjectManager();
 
         public uint NetworkObjectIdCounter { get; private set; } = 1000;
 
@@ -31,106 +27,211 @@ namespace Backend
         private void OnClientConnected(object sender, ClientConnectedEventArgs e)
         {
             e.Client.MessageReceived += OnMessageReceived;
-
-            var newPlayer = CreateNewPlayer(e);
-
-            _objects.Add(newPlayer.Id, newPlayer);
-            _objectOwners.Add(newPlayer.Id, e.Client);
-            _clientOwnedObjects.Add(e.Client, new HashSet<uint> {newPlayer.Id});
-
-            SendNewPlayerToOldClients(e.Client, newPlayer);
-            SendAllPlayersToNewClient(e.Client);
         }
 
         private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
             e.Client.MessageReceived -= OnMessageReceived;
 
-            var removeClientObjectsMessage = _clientOwnedObjects[e.Client].Select(id => new ObjectRemove
-            {
-                Id = id
-            }).Package();
-            SendMessageToAll(removeClientObjectsMessage, ObjectRemove.StaticSendMode);
+            if (!_objectManager.TryGetClientObjects(e.Client, out var clientObjects))
+                return;
 
-            foreach (var networkObjectId in _clientOwnedObjects[e.Client])
+            var removeObjectList = new List<ObjectRemove>();
+            foreach (var clientObject in clientObjects)
             {
-                // TODO [Emanuel, 2022-08-17]: Check if object should be persistent and be repossessed.
-                _objects.Remove(networkObjectId);
-                _objectOwners.Remove(networkObjectId);
+                if (clientObject.Type == ObjectType.Player)
+                {
+                    removeObjectList.Add(new ObjectRemove
+                    {
+                        Id = clientObject.Id,
+                    });
+                }
             }
-            _clientOwnedObjects.Remove(e.Client);
+
+            foreach (var objectRemove in removeObjectList)
+            {
+                _objectManager.ClientRemoveObject(e.Client, objectRemove, out var networkObject);
+                _roomManager.RemoveObjectFromRoom(e.Client, objectRemove, networkObject);
+            }
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
             using var message = e.GetMessage();
-            if (VerifyAndProcessMessage((NetworkMessageType)e.Tag, message, e.Client))
-                SendMessageToAllExcept(message, e.SendMode, e.Client);
+            VerifyAndProcessMessage((NetworkMessageType) e.Tag, message, e.Client);
         }
 
-        private readonly List<(NetworkObject, LocationData)> _objectLocationUpdateQueue =
-            new List<(NetworkObject, LocationData)>();
-        private bool VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
+        // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
+        private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
-            _objectLocationUpdateQueue.Clear();
+            using var reader = message.GetReader();
             switch (type)
             {
                 case NetworkMessageType.ChatMessage:
                     // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
-                    return true;
+                    foreach (var networkClient in ClientManager.GetAllClients())
+                    {
+                        if (networkClient == client)
+                            continue;
+
+                        networkClient.SendMessage(message, ChatMessage.StaticSendMode);
+                    }
+
+                    break;
+
+                case NetworkMessageType.RoomJoin:
+                    while (reader.Position < reader.Length)
+                    {
+                        var roomJoin = reader.ReadSerializable<RoomJoin>();
+                        if (!_roomManager.ClientJoinRoom(client, roomJoin))
+                        {
+                            LogManager.GetLoggerFor(nameof(RoomManager))
+                                .Warning($"Client {client.ID} failed to join room {roomJoin.RoomId}.");
+                            continue;
+                        }
+                        LogManager.GetLoggerFor(nameof(Backend))
+                            .Info($"Client {client.ID} joined room {roomJoin.RoomId}.");
+                    }
+                    break;
+
+                case NetworkMessageType.RoomLeave:
+                    while (reader.Position < reader.Length)
+                    {
+                        var roomLeave = reader.ReadSerializable<RoomLeave>();
+                        if (!_roomManager.ClientLeaveRoom(client, roomLeave))
+                        {
+                            LogManager.GetLoggerFor(nameof(RoomManager))
+                                .Warning($"Client {client.ID} failed to leave room {roomLeave.RoomId}.");
+                            continue;
+                        }
+                        LogManager.GetLoggerFor(nameof(Backend))
+                            .Info($"Client {client.ID} left room {roomLeave.RoomId}.");
+                    }
+                    break;
 
                 case NetworkMessageType.ObjectInit:
+                    while (reader.Position < reader.Length)
+                    {
+                        var objectInit = reader.ReadSerializable<ObjectInit>();
+                        if (objectInit.OwnerId != client.ID)
+                        {
+                            LogManager.GetLoggerFor(nameof(Backend))
+                                .Warning($"Client {client.ID} failed to init object with owner {objectInit.OwnerId}.");
+                            continue;
+                        }
+
+                        objectInit.Id = NetworkObjectIdCounter++;
+                        if (!_objectManager.ClientInitObject(client, objectInit, out var networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(ObjectManager))
+                                .Warning($"Client {client.ID} failed to init object of type {objectInit.Type}.");
+                            continue;
+                        }
+
+                        if (!_roomManager.InitObjectInRoom(client, objectInit, networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(RoomManager))
+                                .Warning($"Client {client.ID} failed to init object inside room {objectInit.RoomId}.");
+                            continue;
+                        }
+
+                        LogManager.GetLoggerFor(nameof(Backend))
+                            .Info($"Client {client.ID} initialized object {objectInit.Id} of type {objectInit.Type} into room {objectInit.RoomId}.");
+                    }
+                    break;
+
                 case NetworkMessageType.ObjectRemove:
-                    return false;
+                    while (reader.Position < reader.Length)
+                    {
+                        var objectRemove = reader.ReadSerializable<ObjectRemove>();
+                        if (!_objectManager.ClientRemoveObject(client, objectRemove, out var networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(ObjectManager))
+                                .Warning($"Client {client.ID} failed to remove object {objectRemove.Id}.");
+                            continue;
+                        }
+
+                        if (!_roomManager.RemoveObjectFromRoom(client, objectRemove, networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(RoomManager))
+                                .Warning($"Client {client.ID} failed to remove object {objectRemove.Id} from room its room.");
+                            continue;
+                        }
+
+                        LogManager.GetLoggerFor(nameof(Backend))
+                            .Info($"Client {client.ID} removed object {objectRemove.Id}.");
+                    }
+                    break;
+
+                case NetworkMessageType.ObjectTransfer:
+                    while (reader.Position < reader.Length)
+                    {
+                        var objectTransfer = reader.ReadSerializable<ObjectTransfer>();
+                        if (objectTransfer.OwnerId != client.ID)
+                        {
+                            LogManager.GetLoggerFor(nameof(Backend))
+                                .Warning($"Client {client.ID} failed to transfer object with owner {objectTransfer.OwnerId}.");
+                            continue;
+                        }
+
+                        if (!_objectManager.TryGetObject(objectTransfer.Id, out var networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(ObjectManager))
+                                .Warning($"Client {client.ID} failed to get object {objectTransfer.Id}.");
+                            continue;
+                        }
+
+                        if (!_roomManager.TransferObjectToRoom(client, objectTransfer, networkObject))
+                        {
+                            LogManager.GetLoggerFor(nameof(RoomManager))
+                                .Warning($"Client {client.ID} failed to transfer object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
+                            continue;
+                        }
+
+                        LogManager.GetLoggerFor(nameof(Backend))
+                            .Info($"Client {client.ID} transferred object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
+                    }
+                    break;
 
                 case NetworkMessageType.ObjectLocation:
-                {
-                    using var reader = message.GetReader();
                     while (reader.Position < reader.Length)
                     {
                         var location = reader.ReadSerializable<ObjectLocation>();
-                        if (!_objectOwners.TryGetValue(location.Id, out var objectOwner) || objectOwner != client)
-                            return false;
+                        if (!_objectManager.TryGetObject(location.Id, out var networkObject)
+                            || networkObject.Owner != client)
+                            continue;
 
-                        _objectLocationUpdateQueue.Add((_objects[location.Id], location.Location));
+                        UpdateLocation(ref networkObject.Location, location.Location);
+                        networkObject.Room.SendMessageToAllExcept(location.Package(), location.SendMode, client);
                     }
-
                     break;
-                }
+
                 case NetworkMessageType.PlayerMovement:
-                {
-                    using var reader = message.GetReader();
                     while (reader.Position < reader.Length)
                     {
                         var move = reader.ReadSerializable<PlayerMovement>();
-                        if (!_objectOwners.TryGetValue(move.Id, out var objectOwner) || objectOwner != client)
-                            return false;
+                        if (!_objectManager.TryGetObject(move.Id, out var networkObject)
+                            || networkObject.Owner != client)
+                            continue;
 
-                        _objectLocationUpdateQueue.Add((_objects[move.Id], move.Location));
+                        UpdateLocation(ref networkObject.Location, move.Location);
+                        networkObject.Room.SendMessageToAllExcept(move.Package(), move.SendMode, client);
                     }
-
                     break;
-                }
+
                 case NetworkMessageType.PlayerInteract:
-                {
-                    using var reader = message.GetReader();
                     while (reader.Position < reader.Length)
                     {
                         var interact = reader.ReadSerializable<PlayerInteract>();
-                        if (!_objectOwners.TryGetValue(interact.Id, out var objectOwner) || objectOwner != client)
-                            return false;
+                        if (!_objectManager.TryGetObject(interact.Id, out var networkObject)
+                            || networkObject.Owner != client)
+                            continue;
 
-                        _objectLocationUpdateQueue.Add((_objects[interact.Id], interact.Location));
+                        UpdateLocation(ref networkObject.Location, interact.Location);
+                        networkObject.Room.SendMessageToAllExcept(interact.Package(), interact.SendMode, client);
                     }
-
                     break;
-                }
             }
-
-            foreach (var (networkObject, location) in _objectLocationUpdateQueue)
-                UpdateLocation(ref networkObject.Location, location);
-
-            return true;
         }
 
         private static void UpdateLocation(ref LocationData location, in LocationData updateData)
@@ -173,61 +274,6 @@ namespace Backend
                 location.AngularVelocityAxisX = updateData.AngularVelocityAxisX;
                 location.AngularVelocityAxisY = updateData.AngularVelocityAxisY;
                 location.AngularVelocityAxisZ = updateData.AngularVelocityAxisZ;
-            }
-        }
-
-        private NetworkObject CreateNewPlayer(ClientConnectedEventArgs e)
-        {
-            return new NetworkObject
-            (
-                NetworkObjectIdCounter++,
-                ObjectType.Player,
-                new LocationData
-                {
-                    Flags = MovementFlags.None,
-                }
-            );
-        }
-
-        private void SendNewPlayerToOldClients(IClient newClient, NetworkObject newNetworkObject)
-        {
-            using var message = new ObjectInit
-            {
-                Id = newNetworkObject.Id,
-                OwnerId = newClient.ID,
-                Type = newNetworkObject.Type,
-                Location = newNetworkObject.Location,
-            }.Package();
-            SendMessageToAllExcept(message, ObjectInit.StaticSendMode, newClient);
-        }
-
-        private void SendAllPlayersToNewClient(IClient newClient)
-        {
-            using var message = _objects.Values.Select(networkObject => new ObjectInit
-            {
-                Id = networkObject.Id,
-                OwnerId = _objectOwners[networkObject.Id].ID,
-                Type = networkObject.Type,
-                Location = networkObject.Location,
-            }).Package();
-            Console.WriteLine($"Sending object initialization to new client {newClient.ID}.");
-            newClient.SendMessage(message, ObjectInit.StaticSendMode);
-        }
-
-        private void SendMessageToAll(Message message, SendMode sendMode)
-        {
-            foreach (var client in _clientOwnedObjects.Keys)
-                client.SendMessage(message, sendMode);
-        }
-
-        private void SendMessageToAllExcept(Message message, SendMode sendMode, IClient ignoredClient)
-        {
-            foreach (var client in _clientOwnedObjects.Keys)
-            {
-                if (client == ignoredClient)
-                    continue;
-
-                client.SendMessage(message, sendMode);
             }
         }
     }

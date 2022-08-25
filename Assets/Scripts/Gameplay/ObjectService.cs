@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Gameplay
 {
-    public class ObjectManager : MonoBehaviour
+    public class ObjectService : MonoBehaviour
     {
         [SerializeField]
         PlayerManager _playerManager;

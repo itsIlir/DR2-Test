@@ -1,4 +1,5 @@
-﻿using GameModels;
+﻿using DarkRift.Server;
+using GameModels;
 
 namespace Backend
 {
@@ -7,12 +8,13 @@ namespace Backend
         public uint Id { get; }
         public ObjectType Type { get; }
         public LocationData Location;
+        public IClient Owner { get; set; }
+        public Room Room { get; set; }
 
-        public NetworkObject(uint id, ObjectType type, LocationData location)
+        public NetworkObject(uint id, ObjectType type)
         {
             Id = id;
             Type = type;
-            Location = location;
         }
     }
 }

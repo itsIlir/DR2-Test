@@ -2,11 +2,17 @@
 {
     public enum NetworkMessageType : ushort
     {
-        ObjectInit = 0,
-        ObjectRemove = 1,
-        ObjectLocation = 2,
-        PlayerMovement = 3,
-        PlayerInteract = 4,
-        ChatMessage = 5,
+        RoomJoin = 10,
+        RoomLeave = 11,
+
+        ObjectInit = 100,
+        ObjectRemove = 101,
+        ObjectLocation = 102,
+        ObjectTransfer = 103,
+
+        PlayerMovement = 110,
+        PlayerInteract = 111,
+
+        ChatMessage = 200,
     }
 }

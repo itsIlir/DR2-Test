@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca95f4ab08f74994d9fadd9dc4fbb51e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _objectManager: {fileID: 51441638}
+  _objectService: {fileID: 51441638}
   _playerManager: {fileID: 51441637}
   _chatManager: {fileID: 51441639}
 --- !u!4 &51441636

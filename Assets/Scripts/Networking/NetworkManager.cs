@@ -11,7 +11,7 @@ namespace Networking
     public class NetworkManager : MonoBehaviour
     {
         [SerializeField]
-        ObjectManager _objectManager;
+        ObjectService _objectService;
 
         [SerializeField]
         PlayerManager _playerManager;
@@ -24,9 +24,10 @@ namespace Networking
         private void Awake()
         {
             Application.runInBackground = true;
-            Application.targetFrameRate = 20;
+            Application.targetFrameRate = Screen.currentResolution.refreshRate * 2;
 
             _networkService = ServiceLocator<INetworkService>.Get();
+
             _networkService.GetProcessor<ChatMessage>().OnMessage += _chatManager.ReceiveMessage;
             _chatManager.OnSendMessage += _networkService.SendMessage;
         }
@@ -35,7 +36,26 @@ namespace Networking
         {
             await _networkService.Connect(IPAddress.Parse("127.0.0.1"), 4296);
             Debug.Log($"Connected! Client ID {_networkService.Client.ID}");
-            _objectManager.LocalClientId = _networkService.Client.ID;
+            _objectService.LocalClientId = _networkService.Client.ID;
+
+            _networkService.SendMessage(new RoomJoin
+            {
+                RoomId = 10,
+            });
+
+            var localPlayerPosition = _playerManager.LocalPlayer.transform.position;
+            _networkService.SendMessage(new ObjectInit
+            {
+                OwnerId = _networkService.Client.ID,
+                Type = ObjectType.Player,
+                RoomId = 10,
+                Location = new LocationData
+                {
+                    Flags = MovementFlags.Position2D,
+                    PositionX = localPlayerPosition.x,
+                    PositionY = localPlayerPosition.y,
+                },
+            });
         }
 
         private void OnDestroy()

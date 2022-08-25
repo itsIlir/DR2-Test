@@ -21,6 +21,8 @@ namespace Gameplay
         private PlayerController _localPlayer = null;
         private INetworkService _networkService;
 
+        public PlayerController LocalPlayer => _localPlayer;
+
         private void Awake()
         {
             _localPlayer = Instantiate(_controllablePrefab);
@@ -142,11 +144,5 @@ namespace Gameplay
                 return;
             }
         }
-    }
-
-    public interface IObjectManager
-    {
-        void UpdateLocation(uint id, LocationData data);
-        void Remove(uint id);
     }
 }

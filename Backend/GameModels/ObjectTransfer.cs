@@ -2,28 +2,20 @@
 
 namespace GameModels
 {
-    public enum ObjectType : byte
+    public struct ObjectTransfer : INetworkData
     {
-        Player,
-        Physics,
-        NPC,
-    }
-
-    public struct ObjectInit : INetworkData
-    {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.ObjectInit;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.ObjectTransfer;
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
         /// The object's Id.
-        /// Only the host may provide an Id, any Id provided by a client will be ignored.
         public uint Id;
 
         /// The object's client's Id.
         public ushort OwnerId;
 
-        /// The id of the room the object should be created in.
+        /// The id of the room the object should be transferred to.
         public uint RoomId;
 
         /// The object's type. Player objects cannot be possessed.
@@ -32,7 +24,7 @@ namespace GameModels
         /// If the object isn't a player, this object is possessing a world entity.
         public uint PossessId;
 
-        /// Initial object transform.
+        /// Transfer object transform.
         public LocationData Location;
 
         public void Deserialize(DeserializeEvent e)
