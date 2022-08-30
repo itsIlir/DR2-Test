@@ -24,7 +24,7 @@ namespace GameModels
         public ushort OwnerId;
 
         /// The id of the room the object should be created in.
-        public uint RoomId;
+        public uint RegionId;
 
         /// The object's type. Player objects cannot be possessed.
         public ObjectType Type;
@@ -39,7 +39,7 @@ namespace GameModels
         {
             Id = e.Reader.ReadUInt32();
             OwnerId = e.Reader.ReadUInt16();
-            RoomId = e.Reader.ReadUInt32();
+            RegionId = e.Reader.ReadUInt32();
             Type = (ObjectType) e.Reader.ReadByte();
             if (Type != ObjectType.Player)
             {
@@ -53,7 +53,7 @@ namespace GameModels
         {
             e.Writer.Write(Id);
             e.Writer.Write(OwnerId);
-            e.Writer.Write(RoomId);
+            e.Writer.Write(RegionId);
             e.Writer.Write((byte)Type);
             if (Type != ObjectType.Player)
             {

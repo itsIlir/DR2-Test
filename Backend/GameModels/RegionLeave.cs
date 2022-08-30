@@ -2,14 +2,14 @@
 
 namespace GameModels
 {
-    public struct RoomJoin : INetworkData
+    public struct RegionLeave : INetworkData
     {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.RoomJoin;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.RegionLeave;
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
-        /// The id of the room the client wants to join.
+        /// The id of the room the client wants to leave.
         public uint RoomId;
 
         public void Deserialize(DeserializeEvent e)

@@ -2,8 +2,8 @@
 {
     public enum NetworkMessageType : ushort
     {
-        RoomJoin = 10,
-        RoomLeave = 11,
+        RegionJoin = 10,
+        RegionLeave = 11,
 
         ObjectInit = 100,
         ObjectRemove = 101,

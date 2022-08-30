@@ -46,7 +46,7 @@ namespace Backend
             {
                 Owner = client,
                 Location = objectInit.Location,
-                Room = null,
+                Region = null,
             };
             _objects.Add(objectInit.Id, networkObject);
             clientObjects.Add(networkObject.Id);

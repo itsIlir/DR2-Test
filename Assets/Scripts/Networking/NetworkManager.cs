@@ -38,9 +38,9 @@ namespace Networking
             Debug.Log($"Connected! Client ID {_networkService.Client.ID}");
             _objectService.LocalClientId = _networkService.Client.ID;
 
-            _networkService.SendMessage(new RoomJoin
+            _networkService.SendMessage(new RegionJoin
             {
-                RoomId = 10,
+                RegionId = 10,
             });
 
             var localPlayerPosition = _playerManager.LocalPlayer.transform.position;
@@ -48,7 +48,7 @@ namespace Networking
             {
                 OwnerId = _networkService.Client.ID,
                 Type = ObjectType.Player,
-                RoomId = 10,
+                RegionId = 10,
                 Location = new LocationData
                 {
                     Flags = MovementFlags.Position2D,

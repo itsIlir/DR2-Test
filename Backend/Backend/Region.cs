@@ -6,20 +6,20 @@ using GameModels;
 
 namespace Backend
 {
-    public class Room
+    public class Region
     {
-        public Room(uint roomId)
+        public Region(uint roomId)
         {
-            RoomId = roomId;
+            RegionId = roomId;
         }
 
-        public readonly uint RoomId;
+        public readonly uint RegionId;
         public HashSet<IClient> Clients { get; } = new HashSet<IClient>();
         public HashSet<NetworkObject> Objects { get; } = new HashSet<NetworkObject>();
 
         public void AddObject(NetworkObject networkObject)
         {
-            networkObject.Room = this;
+            networkObject.Region = this;
             SendMessageToAll(new ObjectInit
             {
                 Id = networkObject.Id,
@@ -31,7 +31,7 @@ namespace Backend
 
         public void RemoveObject(NetworkObject networkObject)
         {
-            networkObject.Room = null;
+            networkObject.Region = null;
             SendMessageToAll(new ObjectRemove
             {
                 Id = networkObject.Id,
@@ -40,8 +40,8 @@ namespace Backend
 
         public void TransferObject(NetworkObject networkObject)
         {
-            var oldRoom = networkObject.Room;
-            networkObject.Room = this;
+            var oldRoom = networkObject.Region;
+            networkObject.Region = this;
 
             SendMessageToAll(new ObjectRemove
             {
@@ -49,7 +49,7 @@ namespace Backend
             }.Package(), ObjectRemove.StaticSendMode);
         }
 
-        public void JoinRoom(IClient client)
+        public void JoinRegion(IClient client)
         {
             Clients.Add(client);
             client.SendMessage(Objects.Select(o => new ObjectInit
@@ -61,7 +61,7 @@ namespace Backend
             }).Package(), ObjectInit.StaticSendMode);
         }
 
-        public void LeaveRoom(IClient client)
+        public void LeaveRegion(IClient client)
         {
             Clients.Remove(client);
             client.SendMessage(Objects.Select(o => new ObjectRemove

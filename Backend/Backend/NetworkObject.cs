@@ -9,7 +9,7 @@ namespace Backend
         public ObjectType Type { get; }
         public LocationData Location;
         public IClient Owner { get; set; }
-        public Room Room { get; set; }
+        public Region Region { get; set; }
 
         public NetworkObject(uint id, ObjectType type)
         {

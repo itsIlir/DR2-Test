@@ -9,7 +9,7 @@ namespace Backend
 {
     public class Backend : Plugin
     {
-        private readonly RoomManager _roomManager = new RoomManager();
+        private readonly RegionManager _roomManager = new RegionManager();
         private readonly ObjectManager _objectManager = new ObjectManager();
 
         public uint NetworkObjectIdCounter { get; private set; } = 1000;
@@ -51,7 +51,7 @@ namespace Backend
             foreach (var objectRemove in removeObjectList)
             {
                 _objectManager.ClientRemoveObject(e.Client, objectRemove, out var networkObject);
-                _roomManager.RemoveObjectFromRoom(e.Client, objectRemove, networkObject);
+                _roomManager.RemoveObjectFromRegion(e.Client, objectRemove, networkObject);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Backend
             VerifyAndProcessMessage((NetworkMessageType) e.Tag, message, e.Client);
         }
 
-        // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
+        /// TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
             using var reader = message.GetReader();
@@ -79,33 +79,33 @@ namespace Backend
 
                     break;
 
-                case NetworkMessageType.RoomJoin:
+                case NetworkMessageType.RegionJoin:
                     while (reader.Position < reader.Length)
                     {
-                        var roomJoin = reader.ReadSerializable<RoomJoin>();
-                        if (!_roomManager.ClientJoinRoom(client, roomJoin))
+                        var regionJoin = reader.ReadSerializable<RegionJoin>();
+                        if (!_roomManager.ClientJoinRegion(client, regionJoin))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to join room {roomJoin.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Client {client.ID} failed to join room {regionJoin.RegionId}.");
                             continue;
                         }
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} joined room {roomJoin.RoomId}.");
+                            .Info($"Client {client.ID} joined room {regionJoin.RegionId}.");
                     }
                     break;
 
-                case NetworkMessageType.RoomLeave:
+                case NetworkMessageType.RegionLeave:
                     while (reader.Position < reader.Length)
                     {
-                        var roomLeave = reader.ReadSerializable<RoomLeave>();
-                        if (!_roomManager.ClientLeaveRoom(client, roomLeave))
+                        var regionLeave = reader.ReadSerializable<RegionLeave>();
+                        if (!_roomManager.ClientLeaveRegion(client, regionLeave))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to leave room {roomLeave.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Client {client.ID} failed to leave room {regionLeave.RoomId}.");
                             continue;
                         }
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} left room {roomLeave.RoomId}.");
+                            .Info($"Client {client.ID} left room {regionLeave.RoomId}.");
                     }
                     break;
 
@@ -128,15 +128,15 @@ namespace Backend
                             continue;
                         }
 
-                        if (!_roomManager.InitObjectInRoom(client, objectInit, networkObject))
+                        if (!_roomManager.InitObjectInRegion(client, objectInit, networkObject))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to init object inside room {objectInit.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Client {client.ID} failed to init object inside room {objectInit.RegionId}.");
                             continue;
                         }
 
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} initialized object {objectInit.Id} of type {objectInit.Type} into room {objectInit.RoomId}.");
+                            .Info($"Client {client.ID} initialized object {objectInit.Id} of type {objectInit.Type} into room {objectInit.RegionId}.");
                     }
                     break;
 
@@ -151,45 +151,15 @@ namespace Backend
                             continue;
                         }
 
-                        if (!_roomManager.RemoveObjectFromRoom(client, objectRemove, networkObject))
+                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, networkObject))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
+                            LogManager.GetLoggerFor(nameof(RegionManager))
                                 .Warning($"Client {client.ID} failed to remove object {objectRemove.Id} from room its room.");
                             continue;
                         }
 
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} removed object {objectRemove.Id}.");
-                    }
-                    break;
-
-                case NetworkMessageType.ObjectTransfer:
-                    while (reader.Position < reader.Length)
-                    {
-                        var objectTransfer = reader.ReadSerializable<ObjectTransfer>();
-                        if (objectTransfer.OwnerId != client.ID)
-                        {
-                            LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client {client.ID} failed to transfer object with owner {objectTransfer.OwnerId}.");
-                            continue;
-                        }
-
-                        if (!_objectManager.TryGetObject(objectTransfer.Id, out var networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
-                                .Warning($"Client {client.ID} failed to get object {objectTransfer.Id}.");
-                            continue;
-                        }
-
-                        if (!_roomManager.TransferObjectToRoom(client, objectTransfer, networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to transfer object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
-                            continue;
-                        }
-
-                        LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} transferred object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
                     }
                     break;
 
@@ -202,7 +172,7 @@ namespace Backend
                             continue;
 
                         UpdateLocation(ref networkObject.Location, location.Location);
-                        networkObject.Room.SendMessageToAllExcept(location.Package(), location.SendMode, client);
+                        networkObject.Region.SendMessageToAllExcept(location.Package(), location.SendMode, client);
                     }
                     break;
 
@@ -215,7 +185,7 @@ namespace Backend
                             continue;
 
                         UpdateLocation(ref networkObject.Location, move.Location);
-                        networkObject.Room.SendMessageToAllExcept(move.Package(), move.SendMode, client);
+                        networkObject.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
                     }
                     break;
 
@@ -228,7 +198,7 @@ namespace Backend
                             continue;
 
                         UpdateLocation(ref networkObject.Location, interact.Location);
-                        networkObject.Room.SendMessageToAllExcept(interact.Package(), interact.SendMode, client);
+                        networkObject.Region.SendMessageToAllExcept(interact.Package(), interact.SendMode, client);
                     }
                     break;
             }
