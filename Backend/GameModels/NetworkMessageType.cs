@@ -40,12 +40,8 @@
         ClientPlayerMovement = 3002 | ClientMessage,
         ServerPlayerMovement = 3002 | ServerMessage,
 
-        /// Non-targeted player interaction.
-        ClientPlayerInteract = 3003 | ClientMessage,
-        ServerPlayerInteract = 3003 | ServerMessage,
-
-        /// Player interaction with target position.
-        ClientPlayerInteractPosition = 3004 | ClientMessage,
-        ServerPlayerInteractPosition = 3004 | ServerMessage,
+        /// Player jump.
+        ClientPlayerJump = 3003 | ClientMessage,
+        ServerPlayerJump = 3003 | ServerMessage,
     }
 }
