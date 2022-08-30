@@ -1,25 +1,25 @@
 ﻿using DarkRift;
 
-namespace GameModels
+namespace GameModels.Status
 {
-    public struct RoomLeave : INetworkData
+    public struct OkResponse : INetworkData
     {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.RoomLeave;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.Ok;
         public const SendMode StaticSendMode = SendMode.Reliable;
+
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
-        /// The id of the room the client wants to leave.
-        public uint RoomId;
+        public NetworkMessageType Request;
 
         public void Deserialize(DeserializeEvent e)
         {
-            RoomId = e.Reader.ReadUInt32();
+            Request = (NetworkMessageType)e.Reader.ReadUInt16();
         }
 
         public void Serialize(SerializeEvent e)
         {
-            e.Writer.Write(RoomId);
+            e.Writer.Write((ushort)Request);
         }
     }
 }
