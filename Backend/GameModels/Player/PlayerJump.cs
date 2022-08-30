@@ -9,8 +9,6 @@ namespace GameModels.Player
 
         public PlayerMovement Movement;
 
-        private DateTime NextTime;
-
         public void Deserialize(DeserializeEvent e)
         {
             Movement.Deserialize(e);
