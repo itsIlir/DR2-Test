@@ -2,9 +2,9 @@
 {
     public enum NetworkMessageType : ushort
     {
-        // Server messages.
+        // Messages sent from the server to clients.
         ServerMessage = 1 << 14,
-        // Client messages.
+        // Messages sent from a client to the server.
         ClientMessage = 1 << 15,
         // Base message type mask.
         MessageMask = 0b0011_1111_1111_1111, // 16383
@@ -19,41 +19,33 @@
         ServerError = 500 | ServerMessage,
 
         /// Join a region.
-        RegionJoin = 1000,
-        ClientRegionJoin = RegionJoin | ClientMessage,
+        ClientRegionJoin = 1000 | ClientMessage,
 
         /// Leave a region.
-        RegionLeave = 1001,
-        ClientRegionLeave = RegionLeave | ClientMessage,
+        ClientRegionLeave = 1001 | ClientMessage,
 
         /// Chat messages.
-        ChatMessage = 2000,
-        ClientChatMessage = ChatMessage | ClientMessage,
-        ServerChatMessage = ChatMessage | ServerMessage,
+        ClientChatMessage = 2000 | ClientMessage,
+        ServerChatMessage = 2000 | ServerMessage,
 
         /// Initialize a player.
-        PlayerInit = 3000,
-        ClientPlayerInit = PlayerInit | ClientMessage,
-        ServerPlayerInit = PlayerInit | ServerMessage,
+        ClientPlayerInit = 3000 | ClientMessage,
+        ServerPlayerInit = 3000 | ServerMessage,
 
         /// Remove a player.
-        PlayerRemove = 3001,
-        ClientPlayerRemove = PlayerRemove | ClientMessage,
-        ServerPlayerRemove = PlayerRemove | ServerMessage,
+        ClientPlayerRemove = 3001 | ClientMessage,
+        ServerPlayerRemove = 3001 | ServerMessage,
 
         /// Player move update.
-        PlayerMovement = 3002,
-        ClientPlayerMovement = PlayerMovement | ClientMessage,
-        ServerPlayerMovement = PlayerMovement | ServerMessage,
+        ClientPlayerMovement = 3002 | ClientMessage,
+        ServerPlayerMovement = 3002 | ServerMessage,
 
         /// Non-targeted player interaction.
-        PlayerInteract = 3003,
-        ClientPlayerInteract = PlayerInteract | ClientMessage,
-        ServerPlayerInteract = PlayerInteract | ServerMessage,
+        ClientPlayerInteract = 3003 | ClientMessage,
+        ServerPlayerInteract = 3003 | ServerMessage,
 
         /// Player interaction with target position.
-        PlayerInteractPosition = 3004,
-        ClientPlayerInteractPosition = PlayerInteractPosition | ClientMessage,
-        ServerPlayerInteractPosition = PlayerInteractPosition | ServerMessage,
+        ClientPlayerInteractPosition = 3004 | ClientMessage,
+        ServerPlayerInteractPosition = 3004 | ServerMessage,
     }
 }

@@ -5,7 +5,6 @@ namespace GameModels.Player
 {
     public struct PlayerMovement : IDarkRiftSerializable
     {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.PlayerMovement;
         public const SendMode StaticSendMode = SendMode.Unreliable;
 
         /// The global input vector.
