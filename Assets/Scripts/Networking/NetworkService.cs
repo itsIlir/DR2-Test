@@ -14,6 +14,8 @@ namespace Networking
         readonly Dictionary<NetworkMessageType, IMessageProcessor>
             MessageProcessors = new Dictionary<NetworkMessageType, IMessageProcessor>();
 
+        readonly HashSet<NetworkMessageType> UnhandledMessageTypes = new HashSet<NetworkMessageType>();
+
         bool _mayProcessMessages = false;
 
         public DarkRiftClient Client { get; private set; }
@@ -25,6 +27,11 @@ namespace Networking
             {
                 processor = new MessageProcessor<T>();
                 MessageProcessors.Add(messageType, processor);
+
+                if (UnhandledMessageTypes.Remove(messageType))
+                {
+                    Debug.LogWarning($"Messages for {messageType} was previously unhandled. Did the processor register too late?");
+                }
             }
             return processor as MessageProcessor<T>;
         }
@@ -104,7 +111,12 @@ namespace Networking
             var messageType = (NetworkMessageType) message.Tag;
             if (!MessageProcessors.TryGetValue(messageType, out var processor))
             {
-                Debug.LogWarning($"No processor for message type {messageType}");
+                // Send a single warning message, ignore if previously warned to avoid spam.
+                if (UnhandledMessageTypes.Add(messageType))
+                {
+                    Debug.LogWarning($"No processor for message type {messageType}");
+                }
+
                 return;
             }
 
