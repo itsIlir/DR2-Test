@@ -1,5 +1,7 @@
 ﻿using System;
 using GameModels;
+using Networking;
+using Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,32 +13,50 @@ namespace Gameplay
 
         [SerializeField] private Text _chatText;
 
-        public event Action<ChatMessage> OnSendMessage;
+        private INetworkService _networkService;
+
+        public event Action<ClientChatMessage> OnSendMessage;
+
+        private void Awake()
+        {
+            _networkService = ServiceLocator<INetworkService>.Get();
+        }
 
         private void OnEnable()
         {
             _input.onEndEdit.AddListener(OnInputMessage);
+            _networkService.GetProcessor<ServerChatMessage>().OnMessage += OnReceiveMessage;
         }
 
         private void OnDisable()
         {
             _input.onEndEdit.RemoveListener(OnInputMessage);
+            _networkService.GetProcessor<ServerChatMessage>().OnMessage -= OnReceiveMessage;
         }
 
-        void OnInputMessage(string message)
+        private void OnInputMessage(string text)
         {
             _input.SetTextWithoutNotify("");
-            var chatMessage = new ChatMessage
+            var chatMessage = new ClientChatMessage
             {
-                ChatText = message,
+                Message = new ChatMessage
+                {
+                    Text = text,
+                },
             };
+            _networkService.SendMessage(chatMessage);
             OnSendMessage?.Invoke(chatMessage);
-            ReceiveMessage(chatMessage);
+            AddMessageToChatLog(_networkService.Client.ID, text);
         }
 
-        public void ReceiveMessage(ChatMessage message)
+        public void OnReceiveMessage(ServerChatMessage message)
         {
-            _chatText.text += "\n" + message.ChatText;
+            AddMessageToChatLog(message.ClientId, message.Message.Text);
+        }
+
+        private void AddMessageToChatLog(ushort sender, string message)
+        {
+            _chatText.text += $"{sender}: {message}\n";
         }
     }
 }
