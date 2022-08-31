@@ -27,7 +27,7 @@ namespace Backend
         public bool ClientJoinRegion(IClient client, ClientRegionJoin regionJoin)
         {
             var region = GetRegion(regionJoin.RegionId);
-            if(!_clientsRegion.TryGetValue(client, out var reg))
+            if(!_clientsRegion.TryGetValue(client, out var clientRegion))
                 _clientsRegion.Add(client, region);
             if (!region.Clients.Add(client))
                 return false;
@@ -35,11 +35,8 @@ namespace Backend
             client.SendMessage(region.Objects.Select(o => new ServerPlayerInit
             {
                 ClientId = o.Id,
-                //Location = o.Location,
-                //Type = o.Type,
-                //RegionId = o.Region.RegionId,
-                //OwnerId = o.Owner.ID,
-                Init = o.PlayerInit
+                Init = o.PlayerInit,
+                //RegionId = o.Region.RegionId,//TODO::Do we need this
 
             }).Package(), PlayerInit.StaticSendMode);
 

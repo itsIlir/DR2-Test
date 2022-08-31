@@ -95,6 +95,7 @@ namespace Gameplay
 
         private void OnPlayerInit(ServerPlayerInit serverInit)
         {
+            Debug.Log($"ServerPlayerInit Called");
             if (_networkPlayers.ContainsKey(serverInit.ClientId))
             {
                 Debug.LogWarning("Tried to initialize existing player!");

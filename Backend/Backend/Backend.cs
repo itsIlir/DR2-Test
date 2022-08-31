@@ -46,19 +46,25 @@ namespace Backend
         /// TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
+            if(message == null || client == null)
+                return;
             using var reader = message.GetReader();
             switch (type)
             {
                 case NetworkMessageType.ClientChatMessage:
                     // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
+                    var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
                     foreach (var networkClient in ClientManager.GetAllClients())
                     {
                         if (networkClient == client)
                             continue;
-
-                        networkClient.SendMessage(message, ChatMessage.StaticSendMode);
+                        var serverChatMessage = new ServerChatMessage
+                        {
+                            ClientId = client.ID,
+                            Message = clientChatMessage.Message,
+                        };
+                        networkClient.SendMessage(serverChatMessage.Package(), serverChatMessage.SendMode);
                     }
-
                     break;
 
                 case NetworkMessageType.ClientRegionJoin:
