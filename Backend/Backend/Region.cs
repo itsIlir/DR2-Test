@@ -15,21 +15,21 @@ namespace Backend
 
         public readonly uint RegionId;
         public HashSet<IClient> Clients { get; } = new HashSet<IClient>();
-        public HashSet<NetworkObject> Objects { get; } = new HashSet<NetworkObject>();
+        public HashSet<PlayerObject> Objects { get; } = new HashSet<PlayerObject>();
 
-        public void AddObject(NetworkObject networkObject)
+        public void AddObject(PlayerObject networkObject)
         {
             networkObject.Region = this;
             SendMessageToAll(new ObjectInit
             {
                 Id = networkObject.Id,
                 Location = networkObject.Location,
-                Type = networkObject.Type,
+                //Type = networkObject.Type,
                 OwnerId = networkObject.Owner.ID,
             }.Package(), ObjectInit.StaticSendMode);
         }
 
-        public void RemoveObject(NetworkObject networkObject)
+        public void RemoveObject(PlayerObject networkObject)
         {
             networkObject.Region = null;
             SendMessageToAll(new ObjectRemove
@@ -38,7 +38,7 @@ namespace Backend
             }.Package(), ObjectRemove.StaticSendMode);
         }
 
-        public void TransferObject(NetworkObject networkObject)
+        public void TransferObject(PlayerObject networkObject)
         {
             var oldRoom = networkObject.Region;
             networkObject.Region = this;
@@ -56,7 +56,7 @@ namespace Backend
             {
                 Id = o.Id,
                 Location = o.Location,
-                Type = o.Type,
+                //Type = o.Type,
                 OwnerId = o.Owner.ID,
             }).Package(), ObjectInit.StaticSendMode);
         }

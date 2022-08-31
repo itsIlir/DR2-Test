@@ -10,12 +10,12 @@ namespace Backend
         private readonly Dictionary<IClient, HashSet<uint>> _clientOwnedObjects =
             new Dictionary<IClient, HashSet<uint>>();
 
-        private readonly Dictionary<uint, NetworkObject> _objects = new Dictionary<uint, NetworkObject>();
+        private readonly Dictionary<uint, PlayerObject> _objects = new Dictionary<uint, PlayerObject>();
 
-        public bool TryGetObject(uint id, out NetworkObject networkObject)
+        public bool TryGetObject(uint id, out PlayerObject networkObject)
             => _objects.TryGetValue(id, out networkObject);
 
-        public bool TryGetClientObjects(IClient client, out IEnumerable<NetworkObject> clientObjects)
+        public bool TryGetClientObjects(IClient client, out IEnumerable<PlayerObject> clientObjects)
         {
             if (_clientOwnedObjects.TryGetValue(client, out var clientObjectIds))
             {
@@ -30,7 +30,7 @@ namespace Backend
         public bool TryGetClientObjectIds(IClient client, out HashSet<uint> clientObjectIds)
             => _clientOwnedObjects.TryGetValue(client, out clientObjectIds);
 
-        public bool ClientInitObject(IClient client, ObjectInit objectInit, out NetworkObject networkObject)
+        public bool ClientInitObject(IClient client, ObjectInit objectInit, out PlayerObject networkObject)
         {
             if (_objects.TryGetValue(objectInit.Id, out networkObject))
                 return false;
@@ -42,7 +42,7 @@ namespace Backend
             }
 
             // Create object.
-            networkObject = new NetworkObject(objectInit.Id, objectInit.Type)
+            networkObject = new PlayerObject(objectInit.Id)
             {
                 Owner = client,
                 Location = objectInit.Location,
@@ -54,7 +54,7 @@ namespace Backend
             return true;
         }
 
-        public bool ClientRemoveObject(IClient client, ObjectRemove objectRemove, out NetworkObject networkObject)
+        public bool ClientRemoveObject(IClient client, ObjectRemove objectRemove, out PlayerObject networkObject)
         {
             networkObject = default;
 

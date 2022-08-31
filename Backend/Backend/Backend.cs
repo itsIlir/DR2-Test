@@ -37,15 +37,12 @@ namespace Backend
                 return;
 
             var removeObjectList = new List<ObjectRemove>();
-            foreach (var clientObject in clientObjects)
+            foreach (var player in clientObjects)
             {
-                if (clientObject.Type == ObjectType.Player)
+                removeObjectList.Add(new ObjectRemove
                 {
-                    removeObjectList.Add(new ObjectRemove
-                    {
-                        Id = clientObject.Id,
-                    });
-                }
+                    Id = player.Id,
+                });
             }
 
             foreach (var objectRemove in removeObjectList)
@@ -128,7 +125,7 @@ namespace Backend
                             continue;
                         }
 
-                        if (!_roomManager.InitObjectInRegion(client, objectInit, networkObject))
+                        if (!_roomManager.InitPlayerInRegion(client, objectInit, networkObject))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
                                 .Warning($"Client {client.ID} failed to init object inside room {objectInit.RegionId}.");

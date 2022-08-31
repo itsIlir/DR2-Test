@@ -33,7 +33,7 @@ namespace Backend
             {
                 Id = o.Id,
                 Location = o.Location,
-                Type = o.Type,
+                //Type = o.Type,
                 RegionId = o.Region.RegionId,
                 OwnerId = o.Owner.ID,
             }).Package(), ObjectInit.StaticSendMode);
@@ -56,25 +56,25 @@ namespace Backend
             return true;
         }
 
-        public bool InitObjectInRegion(IClient client, ObjectInit init, NetworkObject networkObject)
+        public bool InitPlayerInRegion(IClient client, ObjectInit init, PlayerObject playerObject)
         {
             if (!_clientsRegion.TryGetValue(client, out var clientRegion) || (clientRegion.RegionId != init.RegionId))
                 return false;
 
             var region = GetRegion(init.RegionId);
-            region.Objects.Add(networkObject);
-            networkObject.Region = region;
+            region.Objects.Add(playerObject);
+            playerObject.Region = region;
 
             region.SendMessageToAll(init.Package(), init.SendMode);
 
             return true;
         }
 
-        public bool RemoveObjectFromRegion(IClient client, ObjectRemove remove, NetworkObject networkObject)
+        public bool RemoveObjectFromRegion(IClient client, ObjectRemove remove, PlayerObject playerObject)
         {
-            var region = networkObject.Region;
-            region.Objects.Remove(networkObject);
-            networkObject.Region = null;
+            var region = playerObject.Region;
+            region.Objects.Remove(playerObject);
+            playerObject.Region = null;
 
             region.SendMessageToAllExcept(remove.Package(), remove.SendMode, client);
 
