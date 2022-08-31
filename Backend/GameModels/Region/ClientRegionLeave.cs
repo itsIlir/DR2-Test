@@ -1,25 +1,25 @@
 ﻿using DarkRift;
 
-namespace GameModels
+namespace GameModels.Region
 {
-    public struct ObjectRemove : INetworkData
+    public struct ClientRegionLeave : INetworkData
     {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.ObjectRemove;
+        public const NetworkMessageType StaticMessageType = NetworkMessageType.ClientRegionLeave;
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
-        /// The object's Id.
-        public uint Id;
+        /// The id of the region the client wants to leave.
+        public ushort RegionId;
 
         public void Deserialize(DeserializeEvent e)
         {
-            Id = e.Reader.ReadUInt32();
+            RegionId = e.Reader.ReadUInt16();
         }
 
         public void Serialize(SerializeEvent e)
         {
-            e.Writer.Write(Id);
+            e.Writer.Write(RegionId);
         }
     }
 }
