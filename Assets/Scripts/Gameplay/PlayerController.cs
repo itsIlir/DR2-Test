@@ -10,7 +10,7 @@ namespace Gameplay
         [SerializeField]
         bool isOwner;
 
-        private static readonly Bounds PlayBounds = new Bounds(Vector3.zero, new Vector3(10, 10));
+        public static readonly Bounds PlayBounds = new Bounds(Vector3.zero, new Vector3(10, 10));
 
         public Vector2 InputVector { get; set; } = Vector2.zero;
         public Vector2 Position { get; private set; }
@@ -36,6 +36,11 @@ namespace Gameplay
 
             if (isOwner)
                 transform.position = Position;
+        }
+
+        public void PlayerJump()
+        {
+            Debug.Log(isOwner ? "Local jump!" : "Network jump!");
         }
     }
 }

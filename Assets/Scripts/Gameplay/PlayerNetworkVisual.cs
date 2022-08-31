@@ -26,7 +26,7 @@ namespace Gameplay
 
         private void LateUpdate()
         {
-            transform.position += (Vector3)VisualVelocity;
+            transform.position = PlayerController.PlayBounds.ClosestPoint(transform.position + (Vector3)VisualVelocity);
         }
 
         private static float GetFrameIndependentLerpValue(float smoothing, float dt)
