@@ -2,6 +2,9 @@
 using System.Linq;
 using DarkRift.Server;
 using GameModels;
+using GameModels.Player;
+using GameModels.Region;
+using GameModels.Geometry;
 
 namespace Backend
 {
@@ -21,7 +24,7 @@ namespace Backend
             return region;
         }
 
-        public bool ClientJoinRegion(IClient client, RegionJoin regionJoin)
+        public bool ClientJoinRegion(IClient client, ClientRegionJoin regionJoin)
         {
             var region = GetRegion(regionJoin.RegionId);
             if(!_clientsRegion.TryGetValue(client, out var reg))
@@ -29,39 +32,40 @@ namespace Backend
             if (!region.Clients.Add(client))
                 return false;
 
-            client.SendMessage(region.Objects.Select(o => new ObjectInit
+            client.SendMessage(region.Objects.Select(o => new ServerPlayerInit
             {
-                Id = o.Id,
-                Location = o.Location,
+                ClientId = o.Id,
+                //Location = o.Location,
                 //Type = o.Type,
-                RegionId = o.Region.RegionId,
-                OwnerId = o.Owner.ID,
-            }).Package(), ObjectInit.StaticSendMode);
+                //RegionId = o.Region.RegionId,
+                //OwnerId = o.Owner.ID,
+                Init = o.PlayerInit
+
+            }).Package(), PlayerInit.StaticSendMode);
 
             return true;
         }
 
-        public bool ClientLeaveRegion(IClient client, RegionLeave regionLeave)
+        public bool ClientLeaveRegion(IClient client, ClientRegionLeave regionLeave)
         {
             if (!_clientsRegion.TryGetValue(client, out var clientRegion))
                 return false;
             _clientsRegion.Remove(client);
-            var room = GetRegion(regionLeave.RoomId);
+            var room = GetRegion(regionLeave.RegionId);
 
-            client.SendMessage(room.Objects.Select(o => new ObjectRemove
+            client.SendMessage(room.Objects.Select(o => new ServerPlayerRemove
             {
-                Id = o.Id,
-            }).Package(), ObjectRemove.StaticSendMode);
+                ClientId = o.Id,
+            }).Package(), ServerPlayerRemove.StaticSendMode);
 
             return true;
         }
 
-        public bool InitPlayerInRegion(IClient client, ObjectInit init, PlayerObject playerObject)
+        public bool InitPlayerInRegion(IClient client, ClientPlayerInit init, PlayerObject playerObject)
         {
-            if (!_clientsRegion.TryGetValue(client, out var clientRegion) || (clientRegion.RegionId != init.RegionId))
+            if (!_clientsRegion.TryGetValue(client, out var region))
                 return false;
 
-            var region = GetRegion(init.RegionId);
             region.Objects.Add(playerObject);
             playerObject.Region = region;
 
@@ -70,7 +74,7 @@ namespace Backend
             return true;
         }
 
-        public bool RemoveObjectFromRegion(IClient client, ObjectRemove remove, PlayerObject playerObject)
+        public bool RemoveObjectFromRegion(IClient client, ClientPlayerRemove remove, PlayerObject playerObject)
         {
             var region = playerObject.Region;
             region.Objects.Remove(playerObject);

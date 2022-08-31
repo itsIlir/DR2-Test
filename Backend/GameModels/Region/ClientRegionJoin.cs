@@ -2,15 +2,9 @@
 
 namespace GameModels.Region
 {
-<<<<<<<< HEAD:Backend/GameModels/RegionLeave.cs
-    public struct RegionLeave : INetworkData
-    {
-        public const NetworkMessageType StaticMessageType = NetworkMessageType.RegionLeave;
-========
     public struct ClientRegionJoin : INetworkData
     {
         public const NetworkMessageType StaticMessageType = NetworkMessageType.ClientRegionJoin;
->>>>>>>> master:Backend/GameModels/Region/ClientRegionJoin.cs
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;

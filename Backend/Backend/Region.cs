@@ -8,67 +8,68 @@ namespace Backend
 {
     public class Region
     {
-        public Region(uint roomId)
+        public Region(uint regionId)
         {
-            RegionId = roomId;
+            RegionId = regionId;
         }
 
         public readonly uint RegionId;
         public HashSet<IClient> Clients { get; } = new HashSet<IClient>();
         public HashSet<PlayerObject> Objects { get; } = new HashSet<PlayerObject>();
 
-        public void AddObject(PlayerObject networkObject)
-        {
-            networkObject.Region = this;
-            SendMessageToAll(new ObjectInit
-            {
-                Id = networkObject.Id,
-                Location = networkObject.Location,
-                //Type = networkObject.Type,
-                OwnerId = networkObject.Owner.ID,
-            }.Package(), ObjectInit.StaticSendMode);
-        }
+        //TODO::Are the below commented functions needed??
+        //public void AddObject(PlayerObject networkObject)
+        //{
+        //    networkObject.Region = this;
+        //    SendMessageToAll(new PlayerInit
+        //    {
+        //        Id = networkObject.Id,
+        //        Location = networkObject.Location,
+        //        //Type = networkObject.Type,
+        //        OwnerId = networkObject.Owner.ID,
+        //    }.Package(), ObjectInit.StaticSendMode);
+        //}
 
-        public void RemoveObject(PlayerObject networkObject)
-        {
-            networkObject.Region = null;
-            SendMessageToAll(new ObjectRemove
-            {
-                Id = networkObject.Id,
-            }.Package(), ObjectRemove.StaticSendMode);
-        }
+        //public void RemoveObject(PlayerObject networkObject)
+        //{
+        //    networkObject.Region = null;
+        //    SendMessageToAll(new ObjectRemove
+        //    {
+        //        Id = networkObject.Id,
+        //    }.Package(), ObjectRemove.StaticSendMode);
+        //}
 
-        public void TransferObject(PlayerObject networkObject)
-        {
-            var oldRoom = networkObject.Region;
-            networkObject.Region = this;
+        //public void TransferObject(PlayerObject networkObject)
+        //{
+        //    var oldRoom = networkObject.Region;
+        //    networkObject.Region = this;
 
-            SendMessageToAll(new ObjectRemove
-            {
-                Id = networkObject.Id,
-            }.Package(), ObjectRemove.StaticSendMode);
-        }
+        //    SendMessageToAll(new ObjectRemove
+        //    {
+        //        Id = networkObject.Id,
+        //    }.Package(), ObjectRemove.StaticSendMode);
+        //}
 
-        public void JoinRegion(IClient client)
-        {
-            Clients.Add(client);
-            client.SendMessage(Objects.Select(o => new ObjectInit
-            {
-                Id = o.Id,
-                Location = o.Location,
-                //Type = o.Type,
-                OwnerId = o.Owner.ID,
-            }).Package(), ObjectInit.StaticSendMode);
-        }
+        //public void JoinRegion(IClient client)
+        //{
+        //    Clients.Add(client);
+        //    client.SendMessage(Objects.Select(o => new ObjectInit
+        //    {
+        //        Id = o.Id,
+        //        Location = o.Location,
+        //        //Type = o.Type,
+        //        OwnerId = o.Owner.ID,
+        //    }).Package(), ObjectInit.StaticSendMode);
+        //}
 
-        public void LeaveRegion(IClient client)
-        {
-            Clients.Remove(client);
-            client.SendMessage(Objects.Select(o => new ObjectRemove
-            {
-                Id = o.Id,
-            }).Package(), ObjectRemove.StaticSendMode);
-        }
+        //public void LeaveRegion(IClient client)
+        //{
+        //    Clients.Remove(client);
+        //    client.SendMessage(Objects.Select(o => new ObjectRemove
+        //    {
+        //        Id = o.Id,
+        //    }).Package(), ObjectRemove.StaticSendMode);
+        //}
 
         public void SendMessageToAll(Message message, SendMode sendMode)
         {

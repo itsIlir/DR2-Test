@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DarkRift.Server;
-using GameModels;
+using GameModels.Player;
 
 namespace Backend
 {
@@ -30,10 +30,10 @@ namespace Backend
         public bool TryGetClientObjectIds(IClient client, out HashSet<uint> clientObjectIds)
             => _clientOwnedObjects.TryGetValue(client, out clientObjectIds);
 
-        public bool ClientInitObject(IClient client, ObjectInit objectInit, out PlayerObject networkObject)
+        public bool ClientInitObject(IClient client, ClientPlayerInit objectInit, out PlayerObject playerObject)
         {
-            if (_objects.TryGetValue(objectInit.Id, out networkObject))
-                return false;
+            //if (_objects.TryGetValue(objectInit.ClientId, out networkObject))
+            //    return false;
 
             if (!_clientOwnedObjects.TryGetValue(client, out var clientObjects))
             {
@@ -42,32 +42,32 @@ namespace Backend
             }
 
             // Create object.
-            networkObject = new PlayerObject(objectInit.Id)
+            playerObject = new PlayerObject(client.ID)
             {
                 Owner = client,
-                Location = objectInit.Location,
                 Region = null,
+                PlayerInit = objectInit.Init
             };
-            _objects.Add(objectInit.Id, networkObject);
-            clientObjects.Add(networkObject.Id);
+            _objects.Add(client.ID, playerObject);
+            clientObjects.Add(playerObject.Id);
 
             return true;
         }
 
-        public bool ClientRemoveObject(IClient client, ObjectRemove objectRemove, out PlayerObject networkObject)
+        public bool ClientRemoveObject(IClient client, out PlayerObject playerObject)
         {
-            networkObject = default;
+            playerObject = default;
 
             // Fail if client doesn't own any objects.
             if (!_clientOwnedObjects.TryGetValue(client, out var clientObjects))
                 return false;
 
             // Fail if client doesn't own this object (thus cannot be removed).
-            if (!clientObjects.Remove(objectRemove.Id))
+            if (!clientObjects.Remove(client.ID))
                 return false;
 
             // Fail if object didn't exist in the object pool - should never happen, really.
-            if (!_objects.Remove(objectRemove.Id, out networkObject))
+            if (!_objects.Remove(client.ID, out playerObject))
                 return false;
 
             return true;
