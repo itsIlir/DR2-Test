@@ -4,8 +4,6 @@ using DarkRift.Server;
 using GameModels;
 using GameModels.Player;
 using GameModels.Region;
-using GameModels.Geometry;
-using System;
 
 namespace Backend
 {
@@ -52,15 +50,11 @@ namespace Backend
         {
             if (!_clientsRegion.TryGetValue(client, out var clientRegion))
                 return false;
+
             _clientsRegion.Remove(client);
             var region = GetRegion(regionLeave.RegionId);
             if (region.Clients.TryGetValue(client, out var thisClient))
                 region.Clients.Remove(thisClient);
-
-            //client.SendMessage(region.Objects.Select(o => new ServerPlayerRemove
-            //{
-            //    ClientId = o.Id,
-            //}).Package(), ServerPlayerRemove.StaticSendMode);
 
             region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),
                 ServerPlayerRemove.StaticSendMode, client);
@@ -68,24 +62,24 @@ namespace Backend
             return true;
         }
 
-        public bool InitPlayerInRegion(IClient client, ClientPlayerInit init, PlayerObject playerObject)
+        public bool InitPlayerInRegion(IClient client, ClientPlayerInit init, NetworkPlayer networkPlayer)
         {
             if (!_clientsRegion.TryGetValue(client, out var region))
                 return false;
 
-            region.Objects.Add(playerObject);
-            playerObject.Region = region;
+            region.Objects.Add(networkPlayer);
+            networkPlayer.Region = region;
 
             region.SendMessageToAll(init.Package(), init.SendMode);
 
             return true;
         }
 
-        public bool RemoveObjectFromRegion(IClient client, ClientPlayerRemove remove, PlayerObject playerObject)
+        public bool RemoveObjectFromRegion(IClient client, ClientPlayerRemove remove, NetworkPlayer networkPlayer)
         {
-            var region = playerObject.Region;
-            region.Objects.Remove(playerObject);
-            playerObject.Region = null;
+            var region = networkPlayer.Region;
+            region.Objects.Remove(networkPlayer);
+            networkPlayer.Region = null;
 
             region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),
                 ServerPlayerRemove.StaticSendMode, client);

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DarkRift;
-using GameModels.Geometry;
 using GameModels.Player;
 using GameModels.Region;
 using GameModels.Unity;
@@ -17,7 +16,8 @@ namespace Gameplay
         [SerializeField]
         private PlayerController _controllablePrefab, _networkPrefab;
 
-        private readonly Dictionary<ushort, PlayerController> _networkPlayers = new Dictionary<ushort, PlayerController>();
+        private readonly Dictionary<ushort, PlayerController> _networkPlayers =
+            new Dictionary<ushort, PlayerController>();
 
         private PlayerController _localPlayer = null;
         private INetworkService _networkService;
@@ -27,7 +27,6 @@ namespace Gameplay
         public PlayerController LocalPlayer => _localPlayer;
 
         public event Action OnLocalPlayerNetworkInit, OnLocalPlayerNetworkRemove;
-
 
         private void Awake()
         {

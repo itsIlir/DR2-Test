@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using DarkRift;
 using DarkRift.Server;
 using GameModels;
@@ -9,8 +10,9 @@ namespace Backend
 {
     public class Backend : Plugin
     {
+        private Dictionary<IClient, NetworkPlayer> _networkPlayer = new Dictionary<IClient, NetworkPlayer>();
+
         private readonly RegionManager _roomManager = new RegionManager();
-        private readonly ObjectManager _objectManager = new ObjectManager();
 
         public uint NetworkObjectIdCounter { get; private set; } = 1000;
 
@@ -32,8 +34,10 @@ namespace Backend
         private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
             e.Client.MessageReceived -= OnMessageReceived;
-            _objectManager.ClientRemoveObject(e.Client, out var playerObject);
-            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), playerObject);
+
+            _networkPlayer.TryGetValue(e.Client, out var networkPlayer);
+            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), networkPlayer);
+            _networkPlayer.Remove(e.Client);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
@@ -42,7 +46,7 @@ namespace Backend
             VerifyAndProcessMessage((NetworkMessageType) e.Tag, message, e.Client);
         }
 
-        /// TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
+        // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
             if(message == null || client == null)
@@ -57,12 +61,10 @@ namespace Backend
                     {
                         if (networkClient == client)
                             continue;
-                        var serverChatMessage = new ServerChatMessage
+                        networkClient.SendMessage(new ServerChatMessage
                         {
-                            ClientId = client.ID,
-                            Message = clientChatMessage.Message,
-                        };
-                        networkClient.SendMessage(serverChatMessage.Package(), serverChatMessage.SendMode);
+                            ClientId = client.ID, Message = clientChatMessage.Message 
+                        }.Package(), ChatMessage.StaticSendMode);
                     }
                     break;
 
@@ -100,22 +102,22 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var objectInit = reader.ReadSerializable<ClientPlayerInit>();
-                        if (!_objectManager.ClientInitObject(client, objectInit, out var playerObject))
+                        if (!ClientInitObject(client, objectInit, out var networkPlayer))
                         {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
+                            LogManager.GetLoggerFor(nameof(Backend))
                                 .Warning($"Client {client.ID} failed to init object of type Player.");
                             continue;
                         }
 
-                        if (!_roomManager.InitPlayerInRegion(client, objectInit, playerObject))
+                        if (!_roomManager.InitPlayerInRegion(client, objectInit, networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
-                                .Warning($"Failed to init client {client.ID} inside region {playerObject.Region.RegionId}.");
+                                .Warning($"Failed to init client {client.ID} inside region {networkPlayer.Region.RegionId}.");
                             continue;
                         }
 
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} initialized into region {playerObject.Region.RegionId}.");
+                            .Info($"Client {client.ID} initialized into region {networkPlayer.Region.RegionId}.");
                     }
                     break;
 
@@ -123,19 +125,21 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var objectRemove = reader.ReadSerializable<ClientPlayerRemove>();
-                        if (!_objectManager.ClientRemoveObject(client, out var playerObject))
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                         {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
+                            LogManager.GetLoggerFor(nameof(Backend))
                                 .Warning($"Failed to remove client {client.ID}.");
                             continue;
                         }
 
-                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, playerObject))
+                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
                                 .Warning($"Failed to remove client {client.ID} from room its region.");
                             continue;
                         }
+
+                        _networkPlayer.Remove(client);
 
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Removed client {client.ID}.");
@@ -160,11 +164,11 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var move = reader.ReadSerializable<ClientPlayerMovement>();
-                        if (!_objectManager.TryGetObject(client.ID, out var networkObject))
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkObject.Position = move.Movement.Position;
-                        networkObject.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
+                        networkPlayer.Position = move.Movement.Position;
+                        networkPlayer.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
                     }
                     break;
 
@@ -172,14 +176,26 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var jump = reader.ReadSerializable<ClientPlayerJump>();
-                        if (!_objectManager.TryGetObject(client.ID, out var networkObject))
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkObject.Position = jump.Jump.Movement.Position;
-                        networkObject.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
+                        networkPlayer.Position = jump.Jump.Movement.Position;
+                        networkPlayer.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
                     }
                     break;
             }
+        }
+
+        public bool ClientInitObject(IClient client, ClientPlayerInit objectInit, out NetworkPlayer networkPlayer)
+        {
+            networkPlayer = new NetworkPlayer(client.ID)
+            {
+                Owner = client,
+                Region = null,
+                PlayerInit = objectInit.Init
+            };
+            _networkPlayer.Add(client, networkPlayer);
+            return true;
         }
     }
 }

@@ -5,7 +5,7 @@ using GameModels.Player;
 
 namespace Backend
 {
-    public class PlayerObject
+    public class NetworkPlayer
     {
         public ushort Id { get; }
         public IClient Owner { get; set; }
@@ -13,7 +13,7 @@ namespace Backend
         public FloatVector2 Position { get; set; }
         public PlayerInit PlayerInit { get; set; }
 
-        public PlayerObject(ushort id)
+        public NetworkPlayer(ushort id)
         {
             Id = id;
         }
