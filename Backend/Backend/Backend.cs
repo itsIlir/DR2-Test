@@ -32,9 +32,8 @@ namespace Backend
         private void OnClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
             e.Client.MessageReceived -= OnMessageReceived;
-            var playerRemove = new ClientPlayerRemove();
-            _objectManager.ClientRemoveObject(e.Client, out var networkObject);
-            _roomManager.RemoveObjectFromRegion(e.Client, playerRemove, networkObject);
+            _objectManager.ClientRemoveObject(e.Client, out var playerObject);
+            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), playerObject);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)

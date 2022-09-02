@@ -5,6 +5,7 @@ using GameModels;
 using GameModels.Player;
 using GameModels.Region;
 using GameModels.Geometry;
+using System;
 
 namespace Backend
 {
@@ -32,13 +33,17 @@ namespace Backend
             if (!region.Clients.Add(client))
                 return false;
 
+            //Send all players to new client
             client.SendMessage(region.Objects.Select(o => new ServerPlayerInit
             {
                 ClientId = o.Id,
                 Init = o.PlayerInit,
                 //RegionId = o.Region.RegionId,//TODO::Do we need this
-
             }).Package(), PlayerInit.StaticSendMode);
+
+            //Send new player to all clients
+            region.SendMessageToAllExcept(new ServerPlayerInit{ClientId = client.ID}.Package(),
+                PlayerInit.StaticSendMode, client);
 
             return true;
         }
@@ -48,12 +53,17 @@ namespace Backend
             if (!_clientsRegion.TryGetValue(client, out var clientRegion))
                 return false;
             _clientsRegion.Remove(client);
-            var room = GetRegion(regionLeave.RegionId);
+            var region = GetRegion(regionLeave.RegionId);
+            if (region.Clients.TryGetValue(client, out var thisClient))
+                region.Clients.Remove(thisClient);
 
-            client.SendMessage(room.Objects.Select(o => new ServerPlayerRemove
-            {
-                ClientId = o.Id,
-            }).Package(), ServerPlayerRemove.StaticSendMode);
+            //client.SendMessage(region.Objects.Select(o => new ServerPlayerRemove
+            //{
+            //    ClientId = o.Id,
+            //}).Package(), ServerPlayerRemove.StaticSendMode);
+
+            region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),
+                ServerPlayerRemove.StaticSendMode, client);
 
             return true;
         }
@@ -77,7 +87,8 @@ namespace Backend
             region.Objects.Remove(playerObject);
             playerObject.Region = null;
 
-            region.SendMessageToAllExcept(remove.Package(), remove.SendMode, client);
+            region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),
+                ServerPlayerRemove.StaticSendMode, client);
 
             return true;
         }

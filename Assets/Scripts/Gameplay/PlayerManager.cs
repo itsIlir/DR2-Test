@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DarkRift;
 using GameModels.Geometry;
 using GameModels.Player;
+using GameModels.Region;
 using GameModels.Unity;
 using Networking;
 using Services;
@@ -41,6 +42,21 @@ namespace Gameplay
 
             OnLocalPlayerNetworkInit += () => _localPlayerUpdateLoop = StartCoroutine(PlayerMovementNetworkLoop());
             OnLocalPlayerNetworkRemove += () => StopCoroutine(_localPlayerUpdateLoop);
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape) && _localPlayer != null)
+            {
+                Destroy(_localPlayer.gameObject);
+                _networkService.SendMessage(new ClientRegionLeave() { RegionId = 10 });
+            }
+            if (Input.GetKeyDown(KeyCode.Space) && _localPlayer == null)
+            {
+                _localPlayer = Instantiate(_controllablePrefab);
+                _networkService.SendMessage(new ClientRegionJoin() { RegionId = 10 });
+                ConnectLocalPlayer();
+            }
         }
 
         private IEnumerator PlayerMovementNetworkLoop()
