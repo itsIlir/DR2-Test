@@ -1,4 +1,4 @@
-﻿using DarkRift;
+﻿ using DarkRift;
 
 namespace GameModels.Player
 {

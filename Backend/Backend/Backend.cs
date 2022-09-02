@@ -1,16 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using DarkRift;
-using System.Linq;
 using DarkRift.Server;
 using GameModels;
-using System.Collections.Generic;
+using GameModels.Player;
+using GameModels.Region;
 
 namespace Backend
 {
     public class Backend : Plugin
     {
-        private readonly RoomManager _roomManager = new RoomManager();
-        private readonly ObjectManager _objectManager = new ObjectManager();
+        private Dictionary<IClient, NetworkPlayer> _networkPlayer = new Dictionary<IClient, NetworkPlayer>();
+
+        private readonly RegionManager _roomManager = new RegionManager();
 
         public uint NetworkObjectIdCounter { get; private set; } = 1000;
 
@@ -33,26 +35,9 @@ namespace Backend
         {
             e.Client.MessageReceived -= OnMessageReceived;
 
-            if (!_objectManager.TryGetClientObjects(e.Client, out var clientObjects))
-                return;
-
-            var removeObjectList = new List<ObjectRemove>();
-            foreach (var clientObject in clientObjects)
-            {
-                if (clientObject.Type == ObjectType.Player)
-                {
-                    removeObjectList.Add(new ObjectRemove
-                    {
-                        Id = clientObject.Id,
-                    });
-                }
-            }
-
-            foreach (var objectRemove in removeObjectList)
-            {
-                _objectManager.ClientRemoveObject(e.Client, objectRemove, out var networkObject);
-                _roomManager.RemoveObjectFromRoom(e.Client, objectRemove, networkObject);
-            }
+            _networkPlayer.TryGetValue(e.Client, out var networkPlayer);
+            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), networkPlayer);
+            _networkPlayer.Remove(e.Client);
         }
 
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
@@ -64,217 +49,153 @@ namespace Backend
         // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
+            if(message == null || client == null)
+                return;
             using var reader = message.GetReader();
             switch (type)
             {
-                case NetworkMessageType.ChatMessage:
+                case NetworkMessageType.ClientChatMessage:
                     // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
+                    var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
                     foreach (var networkClient in ClientManager.GetAllClients())
                     {
                         if (networkClient == client)
                             continue;
-
-                        networkClient.SendMessage(message, ChatMessage.StaticSendMode);
+                        networkClient.SendMessage(new ServerChatMessage
+                        {
+                            ClientId = client.ID, Message = clientChatMessage.Message 
+                        }.Package(), ChatMessage.StaticSendMode);
                     }
-
                     break;
 
-                case NetworkMessageType.RoomJoin:
+                case NetworkMessageType.ClientRegionJoin:
                     while (reader.Position < reader.Length)
                     {
-                        var roomJoin = reader.ReadSerializable<RoomJoin>();
-                        if (!_roomManager.ClientJoinRoom(client, roomJoin))
+                        var regionJoin = reader.ReadSerializable<ClientRegionJoin>();
+                        if (!_roomManager.ClientJoinRegion(client, regionJoin))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to join room {roomJoin.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Client {client.ID} failed to join region {regionJoin.RegionId}.");
                             continue;
                         }
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} joined room {roomJoin.RoomId}.");
+                            .Info($"Client {client.ID} joined region {regionJoin.RegionId}.");
                     }
                     break;
 
-                case NetworkMessageType.RoomLeave:
+                case NetworkMessageType.ClientRegionLeave:
                     while (reader.Position < reader.Length)
                     {
-                        var roomLeave = reader.ReadSerializable<RoomLeave>();
-                        if (!_roomManager.ClientLeaveRoom(client, roomLeave))
+                        var regionLeave = reader.ReadSerializable<ClientRegionLeave>();
+                        if (!_roomManager.ClientLeaveRegion(client, regionLeave))
                         {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to leave room {roomLeave.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Client {client.ID} failed to leave region {regionLeave.RegionId}.");
                             continue;
                         }
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} left room {roomLeave.RoomId}.");
+                            .Info($"Client {client.ID} left region {regionLeave.RegionId}.");
                     }
                     break;
 
-                case NetworkMessageType.ObjectInit:
+                case NetworkMessageType.ClientPlayerInit:
                     while (reader.Position < reader.Length)
                     {
-                        var objectInit = reader.ReadSerializable<ObjectInit>();
-                        if (objectInit.OwnerId != client.ID)
+                        var objectInit = reader.ReadSerializable<ClientPlayerInit>();
+                        if (!ClientInitObject(client, objectInit, out var networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client {client.ID} failed to init object with owner {objectInit.OwnerId}.");
+                                .Warning($"Client {client.ID} failed to init object of type Player.");
                             continue;
                         }
 
-                        objectInit.Id = NetworkObjectIdCounter++;
-                        if (!_objectManager.ClientInitObject(client, objectInit, out var networkObject))
+                        if (!_roomManager.InitPlayerInRegion(client, objectInit, networkPlayer))
                         {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
-                                .Warning($"Client {client.ID} failed to init object of type {objectInit.Type}.");
-                            continue;
-                        }
-
-                        if (!_roomManager.InitObjectInRoom(client, objectInit, networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to init object inside room {objectInit.RoomId}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Failed to init client {client.ID} inside region {networkPlayer.Region.RegionId}.");
                             continue;
                         }
 
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} initialized object {objectInit.Id} of type {objectInit.Type} into room {objectInit.RoomId}.");
+                            .Info($"Client {client.ID} initialized into region {networkPlayer.Region.RegionId}.");
                     }
                     break;
 
-                case NetworkMessageType.ObjectRemove:
+                case NetworkMessageType.ClientPlayerRemove:
                     while (reader.Position < reader.Length)
                     {
-                        var objectRemove = reader.ReadSerializable<ObjectRemove>();
-                        if (!_objectManager.ClientRemoveObject(client, objectRemove, out var networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
-                                .Warning($"Client {client.ID} failed to remove object {objectRemove.Id}.");
-                            continue;
-                        }
-
-                        if (!_roomManager.RemoveObjectFromRoom(client, objectRemove, networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to remove object {objectRemove.Id} from room its room.");
-                            continue;
-                        }
-
-                        LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} removed object {objectRemove.Id}.");
-                    }
-                    break;
-
-                case NetworkMessageType.ObjectTransfer:
-                    while (reader.Position < reader.Length)
-                    {
-                        var objectTransfer = reader.ReadSerializable<ObjectTransfer>();
-                        if (objectTransfer.OwnerId != client.ID)
+                        var objectRemove = reader.ReadSerializable<ClientPlayerRemove>();
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client {client.ID} failed to transfer object with owner {objectTransfer.OwnerId}.");
+                                .Warning($"Failed to remove client {client.ID}.");
                             continue;
                         }
 
-                        if (!_objectManager.TryGetObject(objectTransfer.Id, out var networkObject))
+                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, networkPlayer))
                         {
-                            LogManager.GetLoggerFor(nameof(ObjectManager))
-                                .Warning($"Client {client.ID} failed to get object {objectTransfer.Id}.");
+                            LogManager.GetLoggerFor(nameof(RegionManager))
+                                .Warning($"Failed to remove client {client.ID} from room its region.");
                             continue;
                         }
 
-                        if (!_roomManager.TransferObjectToRoom(client, objectTransfer, networkObject))
-                        {
-                            LogManager.GetLoggerFor(nameof(RoomManager))
-                                .Warning($"Client {client.ID} failed to transfer object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
-                            continue;
-                        }
+                        _networkPlayer.Remove(client);
 
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} transferred object {objectTransfer.Id} to room {objectTransfer.RoomId}.");
+                            .Info($"Removed client {client.ID}.");
                     }
                     break;
 
-                case NetworkMessageType.ObjectLocation:
+                //TODO::Check if we need new message type here ot not
+                //case NetworkMessageType.ObjectLocation:
+                //    while (reader.Position < reader.Length)
+                //    {
+                //        var location = reader.ReadSerializable<ObjectLocation>();
+                //        if (!_objectManager.TryGetObject(location.Id, out var networkObject)
+                //            || networkObject.Owner != client)
+                //            continue;
+
+                //        UpdateLocation(ref networkObject.Location, location.Location);
+                //        networkObject.Region.SendMessageToAllExcept(location.Package(), location.SendMode, client);
+                //    }
+                //    break;
+
+                case NetworkMessageType.ClientPlayerMovement:
                     while (reader.Position < reader.Length)
                     {
-                        var location = reader.ReadSerializable<ObjectLocation>();
-                        if (!_objectManager.TryGetObject(location.Id, out var networkObject)
-                            || networkObject.Owner != client)
+                        var move = reader.ReadSerializable<ClientPlayerMovement>();
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        UpdateLocation(ref networkObject.Location, location.Location);
-                        networkObject.Room.SendMessageToAllExcept(location.Package(), location.SendMode, client);
+                        networkPlayer.Position = move.Movement.Position;
+                        networkPlayer.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
                     }
                     break;
 
-                case NetworkMessageType.PlayerMovement:
+                case NetworkMessageType.ClientPlayerJump:
                     while (reader.Position < reader.Length)
                     {
-                        var move = reader.ReadSerializable<PlayerMovement>();
-                        if (!_objectManager.TryGetObject(move.Id, out var networkObject)
-                            || networkObject.Owner != client)
+                        var jump = reader.ReadSerializable<ClientPlayerJump>();
+                        if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        UpdateLocation(ref networkObject.Location, move.Location);
-                        networkObject.Room.SendMessageToAllExcept(move.Package(), move.SendMode, client);
-                    }
-                    break;
-
-                case NetworkMessageType.PlayerInteract:
-                    while (reader.Position < reader.Length)
-                    {
-                        var interact = reader.ReadSerializable<PlayerInteract>();
-                        if (!_objectManager.TryGetObject(interact.Id, out var networkObject)
-                            || networkObject.Owner != client)
-                            continue;
-
-                        UpdateLocation(ref networkObject.Location, interact.Location);
-                        networkObject.Room.SendMessageToAllExcept(interact.Package(), interact.SendMode, client);
+                        networkPlayer.Position = jump.Jump.Movement.Position;
+                        networkPlayer.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
                     }
                     break;
             }
         }
 
-        private static void UpdateLocation(ref LocationData location, in LocationData updateData)
+        public bool ClientInitObject(IClient client, ClientPlayerInit objectInit, out NetworkPlayer networkPlayer)
         {
-            location.Flags = updateData.Flags;
-            if ((updateData.Flags & (MovementFlags.Position2D | MovementFlags.Position3D)) != 0)
+            networkPlayer = new NetworkPlayer(client.ID)
             {
-                location.PositionX = updateData.PositionX;
-                location.PositionY = updateData.PositionY;
-                location.PositionZ = updateData.PositionZ;
-            }
-
-            if ((updateData.Flags & MovementFlags.Rotation2D) != 0)
-            {
-                location.Angle = updateData.Angle;
-            }
-
-            if ((updateData.Flags & MovementFlags.Rotation3D) != 0)
-            {
-                location.Pitch = updateData.Pitch;
-                location.Yaw = updateData.Yaw;
-                location.Roll = updateData.Roll;
-            }
-
-            if ((updateData.Flags & (MovementFlags.LinearVelocity2D | MovementFlags.LinearVelocity3D)) != 0)
-            {
-                location.LinearVelocityX = updateData.LinearVelocityX;
-                location.LinearVelocityY = updateData.LinearVelocityY;
-                location.LinearVelocityZ = updateData.LinearVelocityZ;
-            }
-
-            if ((updateData.Flags & MovementFlags.AngularVelocity2D) != 0)
-            {
-                location.AngularVelocitySpeed = updateData.AngularVelocitySpeed;
-            }
-
-            if ((updateData.Flags & MovementFlags.AngularVelocity3D) != 0)
-            {
-                location.AngularVelocitySpeed = updateData.AngularVelocitySpeed;
-                location.AngularVelocityAxisX = updateData.AngularVelocityAxisX;
-                location.AngularVelocityAxisY = updateData.AngularVelocityAxisY;
-                location.AngularVelocityAxisZ = updateData.AngularVelocityAxisZ;
-            }
+                Owner = client,
+                Region = null,
+                PlayerInit = objectInit.Init
+            };
+            _networkPlayer.Add(client, networkPlayer);
+            return true;
         }
     }
 }

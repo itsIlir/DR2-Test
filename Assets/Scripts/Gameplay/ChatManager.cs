@@ -45,12 +45,13 @@ namespace Gameplay
                 },
             };
             _networkService.SendMessage(chatMessage);
-            OnSendMessage?.Invoke(chatMessage);
+            //OnSendMessage?.Invoke(chatMessage);
             AddMessageToChatLog(_networkService.Client.ID, text);
         }
 
         public void OnReceiveMessage(ServerChatMessage message)
         {
+            Debug.Log($"message recived {message.Message.Text} from client {message.ClientId}");
             AddMessageToChatLog(message.ClientId, message.Message.Text);
         }
 

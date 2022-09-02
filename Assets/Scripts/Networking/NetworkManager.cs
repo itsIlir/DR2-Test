@@ -28,7 +28,7 @@ namespace Networking
 
             _networkService = ServiceLocator<INetworkService>.Get();
 
-            _networkService.GetProcessor<ServerChatMessage>().OnMessage += _chatManager.OnReceiveMessage;
+            //_networkService.GetProcessor<ServerChatMessage>().OnMessage += _chatManager.OnReceiveMessage;
             _chatManager.OnSendMessage += _networkService.SendMessage;
         }
 

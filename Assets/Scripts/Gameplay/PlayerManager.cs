@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DarkRift;
-using GameModels.Geometry;
 using GameModels.Player;
+using GameModels.Region;
 using GameModels.Unity;
 using Networking;
 using Services;
@@ -16,7 +16,8 @@ namespace Gameplay
         [SerializeField]
         private PlayerController _controllablePrefab, _networkPrefab;
 
-        private readonly Dictionary<ushort, PlayerController> _networkPlayers = new Dictionary<ushort, PlayerController>();
+        private readonly Dictionary<ushort, PlayerController> _networkPlayers =
+            new Dictionary<ushort, PlayerController>();
 
         private PlayerController _localPlayer = null;
         private INetworkService _networkService;
@@ -26,7 +27,6 @@ namespace Gameplay
         public PlayerController LocalPlayer => _localPlayer;
 
         public event Action OnLocalPlayerNetworkInit, OnLocalPlayerNetworkRemove;
-
 
         private void Awake()
         {
@@ -41,6 +41,21 @@ namespace Gameplay
 
             OnLocalPlayerNetworkInit += () => _localPlayerUpdateLoop = StartCoroutine(PlayerMovementNetworkLoop());
             OnLocalPlayerNetworkRemove += () => StopCoroutine(_localPlayerUpdateLoop);
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape) && _localPlayer != null)
+            {
+                Destroy(_localPlayer.gameObject);
+                _networkService.SendMessage(new ClientRegionLeave() { RegionId = 10 });
+            }
+            if (Input.GetKeyDown(KeyCode.Space) && _localPlayer == null)
+            {
+                _localPlayer = Instantiate(_controllablePrefab);
+                _networkService.SendMessage(new ClientRegionJoin() { RegionId = 10 });
+                ConnectLocalPlayer();
+            }
         }
 
         private IEnumerator PlayerMovementNetworkLoop()
@@ -95,6 +110,7 @@ namespace Gameplay
 
         private void OnPlayerInit(ServerPlayerInit serverInit)
         {
+            Debug.Log($"ServerPlayerInit Called");
             if (_networkPlayers.ContainsKey(serverInit.ClientId))
             {
                 Debug.LogWarning("Tried to initialize existing player!");

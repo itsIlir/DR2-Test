@@ -9,7 +9,7 @@ namespace GameModels.Region
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
 
-        /// The id of the region the client wants to leave.
+        // The id of the region the client wants to leave.
         public ushort RegionId;
 
         public void Deserialize(DeserializeEvent e)

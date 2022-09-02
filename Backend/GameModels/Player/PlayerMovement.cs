@@ -7,12 +7,12 @@ namespace GameModels.Player
     {
         public const SendMode StaticSendMode = SendMode.Unreliable;
 
-        /// The global input vector.
+        // The global input vector.
         public FloatVector2 GlobalInput;
 
         public bool UpdatePosition;
 
-        /// Optional position update.
+        // Optional position update.
         public FloatVector2 Position;
 
         public void Deserialize(DeserializeEvent e)
@@ -38,7 +38,7 @@ namespace GameModels.Player
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => PlayerMovement.StaticSendMode;
 
-        /// The player's movement.
+        // The player's movement.
         public PlayerMovement Movement;
 
         public void Deserialize(DeserializeEvent e)
@@ -58,10 +58,10 @@ namespace GameModels.Player
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => PlayerMovement.StaticSendMode;
 
-        /// Originator.
+        // Originator.
         public ushort ClientId;
 
-        /// The player's movement.
+        // The player's movement.
         public PlayerMovement Movement;
 
         public void Deserialize(DeserializeEvent e)
