@@ -65,26 +65,22 @@ namespace Backend
                 Owner = client,
                 PlayerInit = clientPlayerInit.Init
             };
-            Console.WriteLine($"InitPlayerInRegion 1 Passed");
             if (!_clientsRegion.TryGetValue(client, out Region region))
                 return false;
-            Console.WriteLine($"InitPlayerInRegion 2 Passed");
 
             region.NetworkPlayers.Add(client, networkPlayer);
             networkPlayer.Region = region;
-            Console.WriteLine($"InitPlayerInRegion 3 Passed");
 
             region.SendMessageToAllExcept(new ServerPlayerInit
             {
                 ClientId = client.ID,
                 Init = networkPlayer.PlayerInit
             }.Package(), PlayerInit.StaticSendMode, client);
-            Console.WriteLine($"InitPlayerInRegion 4 Passed");
 
             return true;
         }
 
-        public bool RemoveObjectFromRegion(IClient client, ClientPlayerRemove remove, NetworkPlayer networkPlayer)
+        public bool RemoveObjectFromRegion(IClient client, NetworkPlayer networkPlayer)
         {
             var region = networkPlayer.Region;
             region.NetworkPlayers.Remove(client);

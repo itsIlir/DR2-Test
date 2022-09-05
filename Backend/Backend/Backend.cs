@@ -36,7 +36,7 @@ namespace Backend
             e.Client.MessageReceived -= OnMessageReceived;
 
             _networkPlayer.TryGetValue(e.Client, out var networkPlayer);
-            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), networkPlayer);
+            _roomManager.RemoveObjectFromRegion(e.Client, networkPlayer);
             _networkPlayer.Remove(e.Client);
         }
 
@@ -52,6 +52,8 @@ namespace Backend
             if(message == null || client == null)
                 return;
             using var reader = message.GetReader();
+            LogManager.GetLoggerFor(nameof(Backend))
+                    .Warning($"Message of type {type} recived");
             switch (type)
             {
                 case NetworkMessageType.ClientChatMessage:
@@ -126,7 +128,7 @@ namespace Backend
                             continue;
                         }
 
-                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, networkPlayer))
+                        if (!_roomManager.RemoveObjectFromRegion(client, networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
                                 .Warning($"Failed to remove client {client.ID} from room its region.");
@@ -153,14 +155,26 @@ namespace Backend
                 //    break;
 
                 case NetworkMessageType.ClientPlayerMovement:
+                    LogManager.GetLoggerFor(nameof(Backend))
+                            .Warning($"Client player is moving 0");
                     while (reader.Position < reader.Length)
                     {
-                        var move = reader.ReadSerializable<ClientPlayerMovement>();
+                        LogManager.GetLoggerFor(nameof(Backend))
+                               .Warning($"Client player is moving 1");
+
+                        var clientPlayerMovement = reader.ReadSerializable<ClientPlayerMovement>();
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkPlayer.PlayerMovement = move.Movement;
-                        networkPlayer.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
+                        LogManager.GetLoggerFor(nameof(Backend))
+                                .Warning($"Client player is moving 2");
+
+                        networkPlayer.PlayerMovement = clientPlayerMovement.Movement;
+                        networkPlayer.Region.SendMessageToAllExcept(new ServerPlayerMovement
+                        {
+                            ClientId = client.ID,
+                            Movement = clientPlayerMovement.Movement
+                        }.Package(), clientPlayerMovement.SendMode, client);
                     }
                     break;
 

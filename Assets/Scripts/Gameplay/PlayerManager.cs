@@ -30,7 +30,8 @@ namespace Gameplay
 
         private void Awake()
         {
-            _localPlayer = Instantiate(_controllablePrefab);
+            Vector2 pos = new Vector2(UnityEngine.Random.Range(-10.0f, 10.0f), UnityEngine.Random.Range(-10.0f, 10.0f));
+            _localPlayer = Instantiate(_controllablePrefab, pos, Quaternion.identity);
 
             _networkService = ServiceLocator<INetworkService>.Get();
 
@@ -48,7 +49,7 @@ namespace Gameplay
             if (Input.GetKeyDown(KeyCode.Escape) && _localPlayer != null)
             {
                 Destroy(_localPlayer.gameObject);
-                _networkService.SendMessage(new ClientPlayerRemove());
+                _networkService.SendMessage(new ClientPlayerRemove() { PlayerLeft = true });
                 _networkService.SendMessage(new ClientRegionLeave() { RegionId = 10 });
             }
             if (Input.GetKeyDown(KeyCode.Space) && _localPlayer == null)
@@ -64,7 +65,6 @@ namespace Gameplay
             const float positionUpdateTime = 1f;
             var nextPositionUpdate = 0f;
             var sendDelay = new WaitForSecondsRealtime(0.1f);
-
             var playerMovement = new ClientPlayerMovement();
             while (_networkService.Client.ConnectionState == ConnectionState.Connected)
             {
@@ -105,27 +105,26 @@ namespace Gameplay
             if (!_networkPlayers.ContainsKey(_networkService.Client.ID))
                 return;
 
-
             _networkService.SendMessage(new ClientPlayerRemove());
         }
 
         private void OnPlayerInit(ServerPlayerInit serverInit)
         {
-            Debug.Log($"ServerPlayerInit Called");
             if (_networkPlayers.ContainsKey(serverInit.ClientId))
             {
                 Debug.LogWarning("Tried to initialize existing player!");
                 return;
             }
-
             var localPlayer = serverInit.ClientId == LocalClientId;
             var player = localPlayer
                 ? _localPlayer
                 : Instantiate(_networkPrefab, serverInit.Init.Position.AsVector2(), Quaternion.identity);
             _networkPlayers.Add(serverInit.ClientId, player);
 
-            if (localPlayer)
+            if (!localPlayer)
+            {
                 OnLocalPlayerNetworkInit?.Invoke();
+            }
         }
 
         private void OnPlayerRemove(ServerPlayerRemove serverRemove)
