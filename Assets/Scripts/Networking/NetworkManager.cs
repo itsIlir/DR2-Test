@@ -27,8 +27,6 @@ namespace Networking
             Application.targetFrameRate = Screen.currentResolution.refreshRate * 2;
 
             _networkService = ServiceLocator<INetworkService>.Get();
-
-            //_networkService.GetProcessor<ServerChatMessage>().OnMessage += _chatManager.OnReceiveMessage;
             _chatManager.OnSendMessage += _networkService.SendMessage;
         }
 

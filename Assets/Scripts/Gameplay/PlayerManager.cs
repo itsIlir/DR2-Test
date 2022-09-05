@@ -48,6 +48,7 @@ namespace Gameplay
             if (Input.GetKeyDown(KeyCode.Escape) && _localPlayer != null)
             {
                 Destroy(_localPlayer.gameObject);
+                _networkService.SendMessage(new ClientPlayerRemove());
                 _networkService.SendMessage(new ClientRegionLeave() { RegionId = 10 });
             }
             if (Input.GetKeyDown(KeyCode.Space) && _localPlayer == null)

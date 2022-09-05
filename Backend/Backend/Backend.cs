@@ -102,22 +102,16 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var objectInit = reader.ReadSerializable<ClientPlayerInit>();
-                        if (!ClientInitObject(client, objectInit, out var networkPlayer))
-                        {
-                            LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client {client.ID} failed to init object of type Player.");
-                            continue;
-                        }
-
-                        if (!_roomManager.InitPlayerInRegion(client, objectInit, networkPlayer))
+                        if (!_roomManager.InitPlayerInRegion(client, objectInit, out var networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
-                                .Warning($"Failed to init client {client.ID} inside region {networkPlayer.Region.RegionId}.");
+                                .Warning($"Failed to init a player for client {client.ID} inside region {networkPlayer.Region.RegionId}.");
                             continue;
                         }
+                        _networkPlayer.Add(client, networkPlayer);
 
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} initialized into region {networkPlayer.Region.RegionId}.");
+                            .Info($"Client {client.ID} initialized a player into region {networkPlayer.Region.RegionId}.");
                     }
                     break;
 
@@ -140,9 +134,7 @@ namespace Backend
                         }
 
                         _networkPlayer.Remove(client);
-
-                        LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Removed client {client.ID}.");
+                        LogManager.GetLoggerFor(nameof(Backend)).Info($"Removed client {client.ID}.");
                     }
                     break;
 
@@ -167,7 +159,7 @@ namespace Backend
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkPlayer.Position = move.Movement.Position;
+                        networkPlayer.PlayerMovement = move.Movement;
                         networkPlayer.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
                     }
                     break;
@@ -179,23 +171,11 @@ namespace Backend
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkPlayer.Position = jump.Jump.Movement.Position;
+                        networkPlayer.PlayerMovement = jump.Jump.Movement;
                         networkPlayer.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
                     }
                     break;
             }
-        }
-
-        public bool ClientInitObject(IClient client, ClientPlayerInit objectInit, out NetworkPlayer networkPlayer)
-        {
-            networkPlayer = new NetworkPlayer(client.ID)
-            {
-                Owner = client,
-                Region = null,
-                PlayerInit = objectInit.Init
-            };
-            _networkPlayer.Add(client, networkPlayer);
-            return true;
         }
     }
 }
