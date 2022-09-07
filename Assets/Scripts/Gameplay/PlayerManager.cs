@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DarkRift;
 using GameModels.Player;
 using GameModels.Region;
@@ -30,7 +31,8 @@ namespace Gameplay
 
         private void Awake()
         {
-            _localPlayer = Instantiate(_controllablePrefab);
+            Vector2 pos = new Vector2(UnityEngine.Random.Range(-10.0f, 10.0f), UnityEngine.Random.Range(-10.0f, 10.0f));
+            _localPlayer = Instantiate(_controllablePrefab, pos, Quaternion.identity);
 
             _networkService = ServiceLocator<INetworkService>.Get();
 
@@ -48,6 +50,7 @@ namespace Gameplay
             if (Input.GetKeyDown(KeyCode.Escape) && _localPlayer != null)
             {
                 Destroy(_localPlayer.gameObject);
+                _networkService.SendMessage(new ClientPlayerRemove() { PlayerLeft = true });
                 _networkService.SendMessage(new ClientRegionLeave() { RegionId = 10 });
             }
             if (Input.GetKeyDown(KeyCode.Space) && _localPlayer == null)
@@ -63,12 +66,11 @@ namespace Gameplay
             const float positionUpdateTime = 1f;
             var nextPositionUpdate = 0f;
             var sendDelay = new WaitForSecondsRealtime(0.1f);
-
             var playerMovement = new ClientPlayerMovement();
             while (_networkService.Client.ConnectionState == ConnectionState.Connected)
             {
                 var lastSentInputVector = playerMovement.Movement.GlobalInput.AsVector2();
-                var needPositionUpdate = Time.time > nextPositionUpdate;
+                var needPositionUpdate = Time.time > nextPositionUpdate && _localPlayer.InputVector != Vector2.zero;
                 if (needPositionUpdate || Vector2.Distance(lastSentInputVector, _localPlayer.InputVector) > 0.01f)
                 {
                     playerMovement.Movement.GlobalInput = _localPlayer.InputVector.AsFloatVector2();
@@ -85,18 +87,19 @@ namespace Gameplay
             }
         }
 
-        public void ConnectLocalPlayer()
+        public Task ConnectLocalPlayer()
         {
-            if (_networkPlayers.ContainsKey(_networkService.Client.ID))
-                return;
-
-            _networkService.SendMessage(new ClientPlayerInit
+            if (!_networkPlayers.ContainsKey(_networkService.Client.ID))
             {
-                Init = new PlayerInit
+                _networkService.SendMessage(new ClientPlayerInit
                 {
-                    Position = LocalPlayer.Position.AsFloatVector2(),
-                },
-            });
+                    Init = new PlayerInit
+                    {
+                        Position = LocalPlayer.Position.AsFloatVector2()
+                    },
+                });
+            }
+            return Task.CompletedTask;
         }
 
         public void DisconnectLocalPlayer()
@@ -104,27 +107,26 @@ namespace Gameplay
             if (!_networkPlayers.ContainsKey(_networkService.Client.ID))
                 return;
 
-
             _networkService.SendMessage(new ClientPlayerRemove());
         }
 
         private void OnPlayerInit(ServerPlayerInit serverInit)
         {
-            Debug.Log($"ServerPlayerInit Called");
             if (_networkPlayers.ContainsKey(serverInit.ClientId))
             {
                 Debug.LogWarning("Tried to initialize existing player!");
                 return;
             }
-
             var localPlayer = serverInit.ClientId == LocalClientId;
             var player = localPlayer
                 ? _localPlayer
                 : Instantiate(_networkPrefab, serverInit.Init.Position.AsVector2(), Quaternion.identity);
             _networkPlayers.Add(serverInit.ClientId, player);
 
-            if (localPlayer)
+            if (!localPlayer)
+            {
                 OnLocalPlayerNetworkInit?.Invoke();
+            }
         }
 
         private void OnPlayerRemove(ServerPlayerRemove serverRemove)

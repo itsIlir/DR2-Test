@@ -14,8 +14,10 @@ namespace Backend
         }
 
         public readonly uint RegionId;
+
         public HashSet<IClient> Clients { get; } = new HashSet<IClient>();
-        public HashSet<NetworkPlayer> Objects { get; } = new HashSet<NetworkPlayer>();
+
+        public Dictionary<IClient, NetworkPlayer> NetworkPlayers = new Dictionary<IClient, NetworkPlayer>();
 
         public void SendMessageToAll(Message message, SendMode sendMode)
         {

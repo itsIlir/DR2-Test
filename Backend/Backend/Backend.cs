@@ -36,7 +36,7 @@ namespace Backend
             e.Client.MessageReceived -= OnMessageReceived;
 
             _networkPlayer.TryGetValue(e.Client, out var networkPlayer);
-            _roomManager.RemoveObjectFromRegion(e.Client, new ClientPlayerRemove(), networkPlayer);
+            _roomManager.RemoveObjectFromRegion(e.Client, networkPlayer);
             _networkPlayer.Remove(e.Client);
         }
 
@@ -46,25 +46,25 @@ namespace Backend
             VerifyAndProcessMessage((NetworkMessageType) e.Tag, message, e.Client);
         }
 
-        // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
-            if(message == null || client == null)
-                return;
             using var reader = message.GetReader();
             switch (type)
             {
                 case NetworkMessageType.ClientChatMessage:
-                    // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
-                    var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
-                    foreach (var networkClient in ClientManager.GetAllClients())
+                    while (reader.Position < reader.Length)
                     {
-                        if (networkClient == client)
-                            continue;
-                        networkClient.SendMessage(new ServerChatMessage
+                        var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
+                        foreach (var networkClient in ClientManager.GetAllClients())
                         {
-                            ClientId = client.ID, Message = clientChatMessage.Message 
-                        }.Package(), ChatMessage.StaticSendMode);
+                            if (networkClient == client)
+                                continue;
+                            networkClient.SendMessage(new ServerChatMessage
+                            {
+                                ClientId = client.ID,
+                                Message = clientChatMessage.Message
+                            }.Package(), ChatMessage.StaticSendMode);
+                        }
                     }
                     break;
 
@@ -78,6 +78,7 @@ namespace Backend
                                 .Warning($"Client {client.ID} failed to join region {regionJoin.RegionId}.");
                             continue;
                         }
+
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} joined region {regionJoin.RegionId}.");
                     }
@@ -93,6 +94,7 @@ namespace Backend
                                 .Warning($"Client {client.ID} failed to leave region {regionLeave.RegionId}.");
                             continue;
                         }
+
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} left region {regionLeave.RegionId}.");
                     }
@@ -102,22 +104,16 @@ namespace Backend
                     while (reader.Position < reader.Length)
                     {
                         var objectInit = reader.ReadSerializable<ClientPlayerInit>();
-                        if (!ClientInitObject(client, objectInit, out var networkPlayer))
-                        {
-                            LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client {client.ID} failed to init object of type Player.");
-                            continue;
-                        }
-
-                        if (!_roomManager.InitPlayerInRegion(client, objectInit, networkPlayer))
+                        if (!_roomManager.InitPlayerInRegion(client, objectInit, out var networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
-                                .Warning($"Failed to init client {client.ID} inside region {networkPlayer.Region.RegionId}.");
+                                .Warning($"Failed to init a player for client {client.ID} inside region {networkPlayer.Region.RegionId}.");
                             continue;
                         }
 
+                        _networkPlayer.Add(client, networkPlayer);
                         LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Client {client.ID} initialized into region {networkPlayer.Region.RegionId}.");
+                            .Info($"Client {client.ID} initialized a player into region {networkPlayer.Region.RegionId}.");
                     }
                     break;
 
@@ -132,7 +128,7 @@ namespace Backend
                             continue;
                         }
 
-                        if (!_roomManager.RemoveObjectFromRegion(client, objectRemove, networkPlayer))
+                        if (!_roomManager.RemoveObjectFromRegion(client, networkPlayer))
                         {
                             LogManager.GetLoggerFor(nameof(RegionManager))
                                 .Warning($"Failed to remove client {client.ID} from room its region.");
@@ -140,35 +136,23 @@ namespace Backend
                         }
 
                         _networkPlayer.Remove(client);
-
-                        LogManager.GetLoggerFor(nameof(Backend))
-                            .Info($"Removed client {client.ID}.");
+                        LogManager.GetLoggerFor(nameof(Backend)).Info($"Removed client {client.ID}.");
                     }
                     break;
-
-                //TODO::Check if we need new message type here ot not
-                //case NetworkMessageType.ObjectLocation:
-                //    while (reader.Position < reader.Length)
-                //    {
-                //        var location = reader.ReadSerializable<ObjectLocation>();
-                //        if (!_objectManager.TryGetObject(location.Id, out var networkObject)
-                //            || networkObject.Owner != client)
-                //            continue;
-
-                //        UpdateLocation(ref networkObject.Location, location.Location);
-                //        networkObject.Region.SendMessageToAllExcept(location.Package(), location.SendMode, client);
-                //    }
-                //    break;
 
                 case NetworkMessageType.ClientPlayerMovement:
                     while (reader.Position < reader.Length)
                     {
-                        var move = reader.ReadSerializable<ClientPlayerMovement>();
+                        var clientPlayerMovement = reader.ReadSerializable<ClientPlayerMovement>();
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkPlayer.Position = move.Movement.Position;
-                        networkPlayer.Region.SendMessageToAllExcept(move.Package(), move.SendMode, client);
+                        networkPlayer.PlayerMovement = clientPlayerMovement.Movement;
+                        networkPlayer.Region.SendMessageToAllExcept(new ServerPlayerMovement
+                        {
+                            ClientId = client.ID,
+                            Movement = clientPlayerMovement.Movement
+                        }.Package(), clientPlayerMovement.SendMode, client);
                     }
                     break;
 
@@ -179,23 +163,14 @@ namespace Backend
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
 
-                        networkPlayer.Position = jump.Jump.Movement.Position;
+                        networkPlayer.PlayerMovement = jump.Jump.Movement;
                         networkPlayer.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
                     }
                     break;
-            }
-        }
 
-        public bool ClientInitObject(IClient client, ClientPlayerInit objectInit, out NetworkPlayer networkPlayer)
-        {
-            networkPlayer = new NetworkPlayer(client.ID)
-            {
-                Owner = client,
-                Region = null,
-                PlayerInit = objectInit.Init
-            };
-            _networkPlayer.Add(client, networkPlayer);
-            return true;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }

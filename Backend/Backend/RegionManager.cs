@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DarkRift.Server;
 using GameModels;
@@ -26,22 +27,17 @@ namespace Backend
         public bool ClientJoinRegion(IClient client, ClientRegionJoin regionJoin)
         {
             var region = GetRegion(regionJoin.RegionId);
-            if(!_clientsRegion.TryGetValue(client, out var clientRegion))
+            if (!_clientsRegion.TryGetValue(client, out var clientRegion))
                 _clientsRegion.Add(client, region);
             if (!region.Clients.Add(client))
                 return false;
 
             //Send all players to new client
-            client.SendMessage(region.Objects.Select(o => new ServerPlayerInit
+            client.SendMessage(region.NetworkPlayers.Select(o => new ServerPlayerInit
             {
-                ClientId = o.Id,
-                Init = o.PlayerInit,
-                //RegionId = o.Region.RegionId,//TODO::Do we need this
+                ClientId = o.Value.Id,
+                Init = o.Value.PlayerInit,
             }).Package(), PlayerInit.StaticSendMode);
-
-            //Send new player to all clients
-            region.SendMessageToAllExcept(new ServerPlayerInit{ClientId = client.ID}.Package(),
-                PlayerInit.StaticSendMode, client);
 
             return true;
         }
@@ -54,7 +50,7 @@ namespace Backend
             _clientsRegion.Remove(client);
             var region = GetRegion(regionLeave.RegionId);
             if (region.Clients.TryGetValue(client, out var thisClient))
-                region.Clients.Remove(thisClient);
+                region.Clients.Remove(client);
 
             region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),
                 ServerPlayerRemove.StaticSendMode, client);
@@ -62,23 +58,32 @@ namespace Backend
             return true;
         }
 
-        public bool InitPlayerInRegion(IClient client, ClientPlayerInit init, NetworkPlayer networkPlayer)
+        public bool InitPlayerInRegion(IClient client, ClientPlayerInit clientPlayerInit, out NetworkPlayer networkPlayer)
         {
-            if (!_clientsRegion.TryGetValue(client, out var region))
+            networkPlayer = new NetworkPlayer(client.ID)
+            {
+                PlayerInit = clientPlayerInit.Init
+            };
+            if (!_clientsRegion.TryGetValue(client, out Region region))
                 return false;
 
-            region.Objects.Add(networkPlayer);
+            region.NetworkPlayers.Add(client, networkPlayer);
             networkPlayer.Region = region;
 
-            region.SendMessageToAll(init.Package(), init.SendMode);
+            // Send new player to all clients
+            region.SendMessageToAllExcept(new ServerPlayerInit
+            {
+                ClientId = client.ID,
+                Init = networkPlayer.PlayerInit
+            }.Package(), PlayerInit.StaticSendMode, client);
 
             return true;
         }
 
-        public bool RemoveObjectFromRegion(IClient client, ClientPlayerRemove remove, NetworkPlayer networkPlayer)
+        public bool RemoveObjectFromRegion(IClient client, NetworkPlayer networkPlayer)
         {
             var region = networkPlayer.Region;
-            region.Objects.Remove(networkPlayer);
+            region.NetworkPlayers.Remove(client);
             networkPlayer.Region = null;
 
             region.SendMessageToAllExcept(new ServerPlayerRemove { ClientId = client.ID }.Package(),

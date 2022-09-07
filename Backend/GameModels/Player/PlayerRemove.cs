@@ -8,13 +8,15 @@ namespace GameModels.Player
         public const SendMode StaticSendMode = SendMode.Reliable;
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => StaticSendMode;
-
+        public bool PlayerLeft; //added just to have a message
         public void Deserialize(DeserializeEvent e)
         {
+            PlayerLeft = e.Reader.ReadBoolean();
         }
 
         public void Serialize(SerializeEvent e)
         {
+            e.Writer.Write(PlayerLeft);
         }
     }
 
