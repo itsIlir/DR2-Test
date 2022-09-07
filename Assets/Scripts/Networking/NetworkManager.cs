@@ -1,11 +1,8 @@
-using System.Collections;
-using System.Net;
-using UnityEngine;
-using DarkRift;
-using GameModels;
-using GameModels.Player;
+using System.Threading.Tasks;
 using GameModels.Region;
-using GameModels.Unity;
+using UnityEngine;
+
+using System.Net;
 using Gameplay;
 using Services;
 
@@ -34,12 +31,8 @@ namespace Networking
         {
             await _networkService.Connect(IPAddress.Parse("127.0.0.1"), 4296);
             Debug.Log($"Connected! Client ID {_networkService.Client.ID}");
-
-            _networkService.SendMessage(new ClientRegionJoin()
-            {
-                RegionId = 10,
-            });
-            _playerManager.ConnectLocalPlayer();
+            _networkService.SendMessage(new ClientRegionJoin(){ RegionId = 10 });
+            await _playerManager.ConnectLocalPlayer();
         }
 
         private void OnDestroy()

@@ -9,38 +9,38 @@
         // Base message type mask.
         MessageMask = 0b0011_1111_1111_1111, // 16383
 
-        /// Successful request
+        // Successful request
         Ok = 200 | ServerMessage,
 
-        /// Malformed request
+        // Malformed request
         BadRequest = 400 | ServerMessage,
 
-        /// Unexpected error on server.
+        // Unexpected error on server.
         ServerError = 500 | ServerMessage,
 
-        /// Join a region.
+        // Join a region.
         ClientRegionJoin = 1000 | ClientMessage,
 
-        /// Leave a region.
+        // Leave a region.
         ClientRegionLeave = 1001 | ClientMessage,
 
-        /// Chat messages.
+        // Chat messages.
         ClientChatMessage = 2000 | ClientMessage,
         ServerChatMessage = 2000 | ServerMessage,
 
-        /// Initialize a player.
+        // Initialize a player.
         ClientPlayerInit = 3000 | ClientMessage,
         ServerPlayerInit = 3000 | ServerMessage,
 
-        /// Remove a player.
+        // Remove a player.
         ClientPlayerRemove = 3001 | ClientMessage,
         ServerPlayerRemove = 3001 | ServerMessage,
 
-        /// Player move update.
+        // Player move update.
         ClientPlayerMovement = 3002 | ClientMessage,
         ServerPlayerMovement = 3002 | ServerMessage,
 
-        /// Player jump.
+        // Player jump.
         ClientPlayerJump = 3003 | ClientMessage,
         ServerPlayerJump = 3003 | ServerMessage,
     }

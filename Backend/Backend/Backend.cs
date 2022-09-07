@@ -46,27 +46,25 @@ namespace Backend
             VerifyAndProcessMessage((NetworkMessageType) e.Tag, message, e.Client);
         }
 
-        // TODO [Emanuel, 2022-08-25]: Refactor this method by splitting out functionality in some sensible way.
         private void VerifyAndProcessMessage(NetworkMessageType type, Message message, IClient client)
         {
-            if(message == null || client == null)
-                return;
             using var reader = message.GetReader();
-            LogManager.GetLoggerFor(nameof(Backend))
-                    .Warning($"Message of type {type} recived");
             switch (type)
             {
                 case NetworkMessageType.ClientChatMessage:
-                    // TODO [Emanuel, 2022-08-17]: Add chat message verification here.
-                    var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
-                    foreach (var networkClient in ClientManager.GetAllClients())
+                    while (reader.Position < reader.Length)
                     {
-                        if (networkClient == client)
-                            continue;
-                        networkClient.SendMessage(new ServerChatMessage
+                        var clientChatMessage = reader.ReadSerializable<ClientChatMessage>();
+                        foreach (var networkClient in ClientManager.GetAllClients())
                         {
-                            ClientId = client.ID, Message = clientChatMessage.Message 
-                        }.Package(), ChatMessage.StaticSendMode);
+                            if (networkClient == client)
+                                continue;
+                            networkClient.SendMessage(new ServerChatMessage
+                            {
+                                ClientId = client.ID,
+                                Message = clientChatMessage.Message
+                            }.Package(), ChatMessage.StaticSendMode);
+                        }
                     }
                     break;
 
@@ -80,6 +78,7 @@ namespace Backend
                                 .Warning($"Client {client.ID} failed to join region {regionJoin.RegionId}.");
                             continue;
                         }
+
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} joined region {regionJoin.RegionId}.");
                     }
@@ -95,6 +94,7 @@ namespace Backend
                                 .Warning($"Client {client.ID} failed to leave region {regionLeave.RegionId}.");
                             continue;
                         }
+
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} left region {regionLeave.RegionId}.");
                     }
@@ -110,8 +110,8 @@ namespace Backend
                                 .Warning($"Failed to init a player for client {client.ID} inside region {networkPlayer.Region.RegionId}.");
                             continue;
                         }
-                        _networkPlayer.Add(client, networkPlayer);
 
+                        _networkPlayer.Add(client, networkPlayer);
                         LogManager.GetLoggerFor(nameof(Backend))
                             .Info($"Client {client.ID} initialized a player into region {networkPlayer.Region.RegionId}.");
                     }
@@ -140,34 +140,12 @@ namespace Backend
                     }
                     break;
 
-                //TODO::Check if we need new message type here ot not
-                //case NetworkMessageType.ObjectLocation:
-                //    while (reader.Position < reader.Length)
-                //    {
-                //        var location = reader.ReadSerializable<ObjectLocation>();
-                //        if (!_objectManager.TryGetObject(location.Id, out var networkObject)
-                //            || networkObject.Owner != client)
-                //            continue;
-
-                //        UpdateLocation(ref networkObject.Location, location.Location);
-                //        networkObject.Region.SendMessageToAllExcept(location.Package(), location.SendMode, client);
-                //    }
-                //    break;
-
                 case NetworkMessageType.ClientPlayerMovement:
-                    LogManager.GetLoggerFor(nameof(Backend))
-                            .Warning($"Client player is moving 0");
                     while (reader.Position < reader.Length)
                     {
-                        LogManager.GetLoggerFor(nameof(Backend))
-                               .Warning($"Client player is moving 1");
-
                         var clientPlayerMovement = reader.ReadSerializable<ClientPlayerMovement>();
                         if (!_networkPlayer.TryGetValue(client, out var networkPlayer))
                             continue;
-
-                        LogManager.GetLoggerFor(nameof(Backend))
-                                .Warning($"Client player is moving 2");
 
                         networkPlayer.PlayerMovement = clientPlayerMovement.Movement;
                         networkPlayer.Region.SendMessageToAllExcept(new ServerPlayerMovement
@@ -189,6 +167,9 @@ namespace Backend
                         networkPlayer.Region.SendMessageToAllExcept(jump.Package(), jump.SendMode, client);
                     }
                     break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

@@ -8,7 +8,6 @@ namespace Backend
     public class NetworkPlayer
     {
         public ushort Id { get; }
-        public IClient Owner { get; set; }
         public Region Region { get; set; }
         public PlayerMovement PlayerMovement { get; set; }
         public PlayerInit PlayerInit { get; set; }

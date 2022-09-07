@@ -45,10 +45,10 @@ namespace GameModels
         public NetworkMessageType MessageType => StaticMessageType;
         public SendMode SendMode => ChatMessage.StaticSendMode;
 
-        /// Originator.
+        // Originator.
         public ushort ClientId;
 
-        /// Chat message contents.
+        // Chat message contents.
         public ChatMessage Message;
 
         public void Deserialize(DeserializeEvent e)

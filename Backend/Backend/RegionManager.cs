@@ -27,11 +27,11 @@ namespace Backend
         public bool ClientJoinRegion(IClient client, ClientRegionJoin regionJoin)
         {
             var region = GetRegion(regionJoin.RegionId);
-            if(!_clientsRegion.TryGetValue(client, out var clientRegion))
+            if (!_clientsRegion.TryGetValue(client, out var clientRegion))
                 _clientsRegion.Add(client, region);
             if (!region.Clients.Add(client))
                 return false;
-            Console.WriteLine($"ClientJoinRegion 1 Passed");
+
             //Send all players to new client
             client.SendMessage(region.NetworkPlayers.Select(o => new ServerPlayerInit
             {
@@ -62,7 +62,6 @@ namespace Backend
         {
             networkPlayer = new NetworkPlayer(client.ID)
             {
-                Owner = client,
                 PlayerInit = clientPlayerInit.Init
             };
             if (!_clientsRegion.TryGetValue(client, out Region region))
@@ -71,6 +70,7 @@ namespace Backend
             region.NetworkPlayers.Add(client, networkPlayer);
             networkPlayer.Region = region;
 
+            // Send new player to all clients
             region.SendMessageToAllExcept(new ServerPlayerInit
             {
                 ClientId = client.ID,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DarkRift;
 using GameModels.Player;
 using GameModels.Region;
@@ -69,7 +70,7 @@ namespace Gameplay
             while (_networkService.Client.ConnectionState == ConnectionState.Connected)
             {
                 var lastSentInputVector = playerMovement.Movement.GlobalInput.AsVector2();
-                var needPositionUpdate = Time.time > nextPositionUpdate;
+                var needPositionUpdate = Time.time > nextPositionUpdate && _localPlayer.InputVector != Vector2.zero;
                 if (needPositionUpdate || Vector2.Distance(lastSentInputVector, _localPlayer.InputVector) > 0.01f)
                 {
                     playerMovement.Movement.GlobalInput = _localPlayer.InputVector.AsFloatVector2();
@@ -86,18 +87,19 @@ namespace Gameplay
             }
         }
 
-        public void ConnectLocalPlayer()
+        public Task ConnectLocalPlayer()
         {
-            if (_networkPlayers.ContainsKey(_networkService.Client.ID))
-                return;
-
-            _networkService.SendMessage(new ClientPlayerInit
+            if (!_networkPlayers.ContainsKey(_networkService.Client.ID))
             {
-                Init = new PlayerInit
+                _networkService.SendMessage(new ClientPlayerInit
                 {
-                    Position = LocalPlayer.Position.AsFloatVector2(),
-                },
-            });
+                    Init = new PlayerInit
+                    {
+                        Position = LocalPlayer.Position.AsFloatVector2()
+                    },
+                });
+            }
+            return Task.CompletedTask;
         }
 
         public void DisconnectLocalPlayer()
